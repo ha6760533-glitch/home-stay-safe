@@ -218,11 +218,6 @@ public class RegisterFrame extends JFrame {
             return;
         }
 
-        if (userDAO.isPasswordExist(pass)) {
-            JOptionPane.showMessageDialog(this, "Registrasi Ditolak!\nPassword tersebut sudah digunakan oleh pengguna lain. Gunakan kombinasi password yang unik!", "Keamanan Password", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
         boolean isSuccess = userDAO.register(nama, noIdentitas, user, pass, role);
 
         if (isSuccess) {

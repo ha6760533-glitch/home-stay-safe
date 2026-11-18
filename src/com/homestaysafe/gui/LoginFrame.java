@@ -7,6 +7,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import com.homestaysafe.model.User;
 
 public class LoginFrame extends JFrame {
     private JTextField txtUsername;
@@ -173,26 +174,21 @@ public class LoginFrame extends JFrame {
             return;
         }
 
-        String role = userDAO.checkLogin(user, pass);
+        // OOP: dapat object User (Tamu/Resepsionis/Manager)
+        User loggedIn = userDAO.login(user, pass);
 
-        if (role != null) {
-            String cleanRole = role.trim();
-            JOptionPane.showMessageDialog(this, "Login Berhasil!\nSelamat datang, Anda masuk sebagai: " + cleanRole, "Sukses", JOptionPane.INFORMATION_MESSAGE);
+        if (loggedIn != null) {
+            JOptionPane.showMessageDialog(this,
+                    "Login Berhasil!\nSelamat datang, " + loggedIn.getNama() +
+                            "\nRole: " + loggedIn.getDisplayRole(),
+                    "Sukses", JOptionPane.INFORMATION_MESSAGE);
 
-            if (cleanRole.equalsIgnoreCase("Tamu")) {
-                dispose();
-                new TamuFrame(user).setVisible(true);
-            } else if (cleanRole.equalsIgnoreCase("Resepsionis")) {
-                dispose();
-                new ResepsionisFrame(user).setVisible(true);
-            } else if (cleanRole.equalsIgnoreCase("Manajer") || cleanRole.equalsIgnoreCase("Manager")) {
-                dispose();
-                new ManajerFrame(user).setVisible(true);
-            } else {
-                JOptionPane.showMessageDialog(this, "Role di database tidak dikenali: '" + cleanRole + "'", "Error Role", JOptionPane.ERROR_MESSAGE);
-            }
+            dispose();
+            // Polymorphism: tiap subclass User (Tamu/Resepsionis/Manager) membuat dashboard-nya sendiri
+            loggedIn.createDashboard().setVisible(true);
         } else {
             JOptionPane.showMessageDialog(this, "Username atau Password salah!", "Login Gagal", JOptionPane.ERROR_MESSAGE);
         }
     }
+
 }

@@ -1,36 +1,17 @@
 package com.homestaysafe.dao;
 
+import com.homestaysafe.exception.JadwalBentrokException;
+import com.homestaysafe.model.Kamar;
 import com.homestaysafe.util.DatabaseConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
 public class KamarDAO {
-
-    public static class Kamar {
-        private int idKamar;
-        private String noKamar;
-        private String tipeKamar;
-        private double hargaPerMalam;
-        private String statusKamar;
-
-        public Kamar(int idKamar, String noKamar, String tipeKamar, double hargaPerMalam, String statusKamar) {
-            this.idKamar = idKamar;
-            this.noKamar = noKamar;
-            this.tipeKamar = tipeKamar;
-            this.hargaPerMalam = hargaPerMalam;
-            this.statusKamar = statusKamar;
-        }
-
-        public int getIdKamar() { return idKamar; }
-        public String getNoKamar() { return noKamar; }
-        public String getTipeKamar() { return tipeKamar; }
-        public double getHargaPerMalam() { return hargaPerMalam; }
-        public String getStatusKamar() { return statusKamar; }
-    }
 
     public List<Kamar> getAllKamar() {
         List<Kamar> listKamar = new ArrayList<>();
@@ -65,7 +46,7 @@ public class KamarDAO {
              ResultSet rs = stmt.executeQuery(sqlSelect)) {
 
             while (rs.next()) {
-                listKamar.add(new Kamar(
+                listKamar.add(Kamar.buat(
                         rs.getInt("id_kamar"),
                         rs.getString("no_kamar"),
                         rs.getString("tipe_kamar"),
@@ -127,10 +108,18 @@ public class KamarDAO {
         return false;
     }
 
-    public String simpanReservasi(String username, int idKamar, String checkIn, String checkOut, double totalHarga) {
+    /**
+     * Menyimpan reservasi baru berstatus Pending.
+     *
+     * @return id reservasi yang baru dibuat
+     * @throws JadwalBentrokException jika kamar sudah dipesan pada rentang tanggal tersebut
+     * @throws SQLException           jika user/kamar tidak ditemukan atau penyimpanan gagal
+     */
+    public int simpanReservasi(String username, int idKamar, String checkIn, String checkOut, double totalHarga)
+            throws JadwalBentrokException, SQLException {
 
         if (!isKamarTersediaUntukTanggal(idKamar, checkIn, checkOut)) {
-            return "BENTROK";
+            throw new JadwalBentrokException(getNoKamarById(idKamar), checkIn, checkOut);
         }
 
         String sqlUser = "SELECT id_user FROM users WHERE LOWER(username) = LOWER(?) OR LOWER(nama) = LOWER(?)";
@@ -148,14 +137,14 @@ public class KamarDAO {
             ResultSet rsUser = stmtUser.executeQuery();
 
             if (!rsUser.next()) {
-                return "Username '" + username + "' tidak ditemukan di tabel users.";
+                throw new SQLException("Username '" + username + "' tidak ditemukan di tabel users.");
             }
             int idUser = rsUser.getInt("id_user");
 
             stmtInfo.setInt(1, idKamar);
             ResultSet rsKamar = stmtInfo.executeQuery();
             if (!rsKamar.next()) {
-                return "Data kamar dengan ID " + idKamar + " tidak ditemukan.";
+                throw new SQLException("Data kamar dengan ID " + idKamar + " tidak ditemukan.");
             }
             String noKamar = rsKamar.getString("no_kamar");
             String tipeKamar = rsKamar.getString("tipe_kamar");
@@ -174,20 +163,29 @@ public class KamarDAO {
                 if (rs.next()) {
                     int idReservasi = rs.getInt(1);
                     conn.commit();
-                    return "OK|" + idReservasi;   // kirim ID ke UI untuk dijadikan kode booking
-                } else {
-                    conn.rollback();
-                    return "Gagal mendapatkan ID reservasi.";
+                    return idReservasi;
                 }
-            } catch (Exception ex) {
                 conn.rollback();
-                ex.printStackTrace();
-                return ex.getMessage();
+                throw new SQLException("Gagal mendapatkan ID reservasi.");
+            } catch (SQLException ex) {
+                conn.rollback();
+                throw ex;
             }
+        }
+    }
+
+    /** Nomor kamar untuk pesan error; fallback ke "ID n" bila tidak ditemukan. */
+    public String getNoKamarById(int idKamar) {
+        String sql = "SELECT no_kamar FROM kamar WHERE id_kamar = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, idKamar);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getString("no_kamar");
         } catch (Exception e) {
             e.printStackTrace();
-            return e.getMessage();
         }
+        return "ID " + idKamar;
     }
 
     public boolean updateStatusKamar(int idKamar, String statusBaru) {

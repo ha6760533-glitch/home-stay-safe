@@ -1,11 +1,14 @@
-package com.homestaysafe.gui.panel;
+package com.homestaysafe.gui.panel.tamu;
 
 import com.homestaysafe.dao.KamarDAO;
+import com.homestaysafe.model.Kamar;
+import com.homestaysafe.exception.JadwalBentrokException;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.*;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -37,12 +40,12 @@ public class BookingCardPanel extends JPanel {
         lblTitle.setForeground(COLOR_NAVY);
 
         KamarDAO kamarDAO = new KamarDAO();
-        List<KamarDAO.Kamar> listKamar = kamarDAO.getAllKamar();
+        List<Kamar> listKamar = kamarDAO.getAllKamar();
 
         JPanel gridPanel = new JPanel(new GridLayout(0, 3, 20, 20));
         gridPanel.setBackground(COLOR_BG);
 
-        for (KamarDAO.Kamar k : listKamar) {
+        for (Kamar k : listKamar) {
             JPanel card = new JPanel(new BorderLayout(10, 10));
             card.setBackground(Color.WHITE);
             card.setBorder(BorderFactory.createCompoundBorder(
@@ -126,7 +129,7 @@ public class BookingCardPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
-    private void showBookingDialog(KamarDAO.Kamar kamar) {
+    private void showBookingDialog(Kamar kamar) {
         JDialog dialog = new JDialog(parentFrame, "Konfirmasi Reservasi Kamar " + kamar.getNoKamar(), true);
         dialog.setSize(420, 340);
         dialog.setLocationRelativeTo(parentFrame);
@@ -191,11 +194,9 @@ public class BookingCardPanel extends JPanel {
             double totalBayar = kamar.getHargaPerMalam() * days;
 
             KamarDAO dao = new KamarDAO();
-            String hasil = dao.simpanReservasi(usernameTamu, kamar.getIdKamar(), checkIn, checkOut, totalBayar);
-
-            if (hasil != null && hasil.startsWith("OK|")) {
-                String idStr = hasil.split("\\|")[1];
-                String kodeBooking = "HS-" + String.format("%05d", Integer.parseInt(idStr));
+            try {
+                int idReservasi = dao.simpanReservasi(usernameTamu, kamar.getIdKamar(), checkIn, checkOut, totalBayar);
+                String kodeBooking = "HS-" + String.format("%05d", idReservasi);
 
                 JOptionPane.showMessageDialog(dialog,
                         "Booking Berhasil!\n\nKode Booking: " + kodeBooking +
@@ -205,14 +206,15 @@ public class BookingCardPanel extends JPanel {
                 dialog.dispose();
                 contentPanel.add(new BookingCardPanel(usernameTamu, parentFrame, contentPanel, cardLayout), "Booking");
                 cardLayout.show(contentPanel, "Booking");
-            } else if ("BENTROK".equals(hasil)) {
+            } catch (JadwalBentrokException ex) {
                 JOptionPane.showMessageDialog(dialog,
-                        "Jadwal Bentrok!\n\nKamar ini sudah dipesan pada rentang tanggal tersebut.\n" +
+                        "Jadwal Bentrok!\n\n" + ex.getMessage() + "\n" +
                                 "Silakan ubah tanggal atau pilih kamar lain.",
                         "Jadwal Bentrok", JOptionPane.WARNING_MESSAGE);
-            } else {
+            } catch (SQLException ex) {
+                ex.printStackTrace();
                 JOptionPane.showMessageDialog(dialog,
-                        "Gagal menyimpan ke database:\n" + hasil,
+                        "Gagal menyimpan ke database:\n" + ex.getMessage(),
                         "Error Database", JOptionPane.ERROR_MESSAGE);
             }
         });

@@ -1,6 +1,7 @@
 package com.homestaysafe.gui.panel.resepsionis;
 
 import com.homestaysafe.dao.KamarDAO;
+import com.homestaysafe.model.Kamar;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
@@ -13,7 +14,7 @@ public class CekStokKamarPanel extends JPanel {
     private final Color COLOR_GOLD = new Color(197, 168, 128);
     private final Color COLOR_BORDER = new Color(226, 232, 240);
     private final JPanel gridPanel;
-    private List<KamarDAO.Kamar> listKamar;
+    private List<Kamar> listKamar;
     private final JComboBox<String> cbTipe;
     private final JComboBox<String> cbStatus;
 
@@ -74,7 +75,7 @@ public class CekStokKamarPanel extends JPanel {
     private void renderCards(String filterTipe, String filterStatus) {
         gridPanel.removeAll();
 
-        for (KamarDAO.Kamar k : listKamar) {
+        for (Kamar k : listKamar) {
             String statusDb = k.getStatusKamar() != null ? k.getStatusKamar().trim() : "Tersedia";
             boolean matchTipe = filterTipe.equals("Semua Tipe") || k.getTipeKamar().equalsIgnoreCase(filterTipe);
             boolean matchStatus = filterStatus.equals("Semua Status") || statusDb.equalsIgnoreCase(filterStatus);
@@ -115,9 +116,7 @@ public class CekStokKamarPanel extends JPanel {
             topCard.add(lblTipe, BorderLayout.WEST);
             topCard.add(lblStatus, BorderLayout.EAST);
 
-            String fasilitas = k.getTipeKamar().equalsIgnoreCase("Suite") ? "AC, King Bed, Smart TV, Bathup, Breakfast" :
-                    k.getTipeKamar().equalsIgnoreCase("Deluxe") ? "AC, Queen Bed, Wi-Fi, Water Heater" :
-                            "AC, Single Bed, Wi-Fi";
+            String fasilitas = k.getFasilitas(); // Polymorphism: tiap subclass Kamar punya fasilitas sendiri
 
             JPanel midCard = new JPanel(new GridLayout(3, 1, 4, 4));
             midCard.setOpaque(false);

@@ -1,7 +1,9 @@
 package com.homestaysafe.gui.panel.resepsionis;
 
 import com.homestaysafe.dao.KamarDAO;
+import com.homestaysafe.model.Kamar;
 import com.homestaysafe.dao.ResepsionisDAO;
+import com.homestaysafe.exception.JadwalBentrokException;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -61,13 +63,13 @@ public class OfflineBookingPanel extends JPanel {
         JTextField txtNIK = createStyledField();
 
         KamarDAO kamarDAO = new KamarDAO();
-        List<KamarDAO.Kamar> listKamar = kamarDAO.getAllKamar();
+        List<Kamar> listKamar = kamarDAO.getAllKamar();
         JComboBox<String> cbKamar = new JComboBox<>();
         cbKamar.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         cbKamar.setPreferredSize(new Dimension(0, 38));
         cbKamar.setBackground(Color.WHITE);
 
-        for (KamarDAO.Kamar k : listKamar) {
+        for (Kamar k : listKamar) {
             if (k.getStatusKamar().equalsIgnoreCase("Tersedia")) {
                 cbKamar.addItem(k.getIdKamar() + " - No " + k.getNoKamar() + " (" + k.getTipeKamar() + " - Rp " + String.format("%,.0f", k.getHargaPerMalam()) + ")");
             }
@@ -162,7 +164,7 @@ public class OfflineBookingPanel extends JPanel {
         Runnable updateRingkasan = () -> {
             if (cbKamar.getSelectedItem() == null) return;
             int idKamar = Integer.parseInt(cbKamar.getSelectedItem().toString().split(" - ")[0].trim());
-            KamarDAO.Kamar target = listKamar.stream().filter(k -> k.getIdKamar() == idKamar).findFirst().orElse(null);
+            Kamar target = listKamar.stream().filter(k -> k.getIdKamar() == idKamar).findFirst().orElse(null);
             if (target == null) return;
 
             long days = 1;
@@ -210,12 +212,7 @@ public class OfflineBookingPanel extends JPanel {
             }
 
             int idKamar = Integer.parseInt(cbKamar.getSelectedItem().toString().split(" - ")[0].trim());
-            if (!kamarDAO.isKamarTersediaUntukTanggal(idKamar, checkIn, checkOut)) {
-                JOptionPane.showMessageDialog(this, "Jadwal Bentrok! Kamar tidak tersedia pada tanggal tersebut.", "Jadwal Bentrok", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            KamarDAO.Kamar targetKamar = listKamar.stream().filter(k -> k.getIdKamar() == idKamar).findFirst().orElse(null);
+            Kamar targetKamar = listKamar.stream().filter(k -> k.getIdKamar() == idKamar).findFirst().orElse(null);
             double totalHarga = targetKamar != null ? targetKamar.getHargaPerMalam() : 0;
             try {
                 Date dIn = sdf.parse(checkIn);
@@ -225,7 +222,13 @@ public class OfflineBookingPanel extends JPanel {
             } catch (Exception ignored) {}
 
             ResepsionisDAO dao = new ResepsionisDAO();
-            String[] kredensial = dao.simpanPemesananOffline(nama, nik, idKamar, checkIn, checkOut, totalHarga);
+            String[] kredensial;
+            try {
+                kredensial = dao.simpanPemesananOffline(nama, nik, idKamar, checkIn, checkOut, totalHarga);
+            } catch (JadwalBentrokException ex) {
+                JOptionPane.showMessageDialog(this, "Jadwal Bentrok!\n" + ex.getMessage(), "Jadwal Bentrok", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
 
             if (kredensial != null) {
                 String noKamarStr = targetKamar != null ? targetKamar.getNoKamar() : "-";

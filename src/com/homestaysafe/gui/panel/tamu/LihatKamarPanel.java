@@ -1,6 +1,7 @@
-package com.homestaysafe.gui.panel;
+package com.homestaysafe.gui.panel.tamu;
 
 import com.homestaysafe.dao.KamarDAO;
+import com.homestaysafe.model.Kamar;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -26,7 +27,7 @@ public class LihatKamarPanel extends JPanel {
         add(lblTitle, BorderLayout.NORTH);
 
         KamarDAO kamarDAO = new KamarDAO();
-        List<KamarDAO.Kamar> listKamar = kamarDAO.getAllKamar();
+        List<Kamar> listKamar = kamarDAO.getAllKamar();
 
         JPanel mainContainer = new JPanel(new BorderLayout());
         mainContainer.setBackground(COLOR_BG);
@@ -34,7 +35,7 @@ public class LihatKamarPanel extends JPanel {
         JPanel gridPanel = new JPanel(new GridLayout(0, 3, 20, 20));
         gridPanel.setBackground(COLOR_BG);
 
-        for (KamarDAO.Kamar k : listKamar) {
+        for (Kamar k : listKamar) {
             JPanel card = new JPanel(new BorderLayout(10, 10));
             card.setBackground(Color.WHITE);
             card.setBorder(BorderFactory.createCompoundBorder(
@@ -70,8 +71,7 @@ public class LihatKamarPanel extends JPanel {
             topCard.add(lblTipe, BorderLayout.WEST);
             topCard.add(lblStatus, BorderLayout.EAST);
 
-            String fasilitas = k.getTipeKamar().equalsIgnoreCase("Suite") ? "AC, King Bed, Smart TV, Bathup, Breakfast" :
-                    k.getTipeKamar().equalsIgnoreCase("Deluxe") ? "AC, Queen Bed, Wi-Fi, Water Heater" : "AC, Single Bed, Wi-Fi";
+            String fasilitas = k.getFasilitas(); // Polymorphism: tiap subclass Kamar punya fasilitas sendiri
 
             JPanel midCard = new JPanel(new GridLayout(3, 1, 4, 4));
             midCard.setOpaque(false);
