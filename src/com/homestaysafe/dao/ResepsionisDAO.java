@@ -1,6 +1,8 @@
 package com.homestaysafe.dao;
 
+import com.homestaysafe.exception.JadwalBentrokException;
 import com.homestaysafe.util.DatabaseConnection;
+import com.homestaysafe.util.PasswordUtil;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -100,10 +102,15 @@ public class ResepsionisDAO {
         return list;
     }
 
-    public String[] simpanPemesananOffline(String namaTamu, String noIdentitas, int idKamar, String checkIn, String checkOut, double totalHarga) {
+    /**
+     * @return {username, password} tamu, atau null bila penyimpanan gagal karena error database
+     * @throws JadwalBentrokException jika kamar sudah dipesan pada rentang tanggal tersebut
+     */
+    public String[] simpanPemesananOffline(String namaTamu, String noIdentitas, int idKamar, String checkIn, String checkOut, double totalHarga)
+            throws JadwalBentrokException {
         KamarDAO kamarDAO = new KamarDAO();
         if (!kamarDAO.isKamarTersediaUntukTanggal(idKamar, checkIn, checkOut)) {
-            return null;
+            throw new JadwalBentrokException(kamarDAO.getNoKamarById(idKamar), checkIn, checkOut);
         }
 
         String sqlCheckUser = "SELECT id_user, username FROM users WHERE no_identitas = ?";
@@ -153,7 +160,7 @@ public class ResepsionisDAO {
                     try (PreparedStatement psUser = conn.prepareStatement(sqlInsertUser)) {
                         psUser.setString(1, namaTamu.trim());
                         psUser.setString(2, usernameTamu);
-                        psUser.setString(3, passwordTamu);
+                        psUser.setString(3, PasswordUtil.hash(passwordTamu)); // simpan hash; password asli hanya ditampilkan ke resepsionis
                         psUser.setString(4, noIdentitas.trim());
                         ResultSet rsNew = psUser.executeQuery();
                         if (rsNew.next()) {

@@ -65,12 +65,13 @@ public class ReservasiDAO {
             e.printStackTrace();
         }
 
-        String sqlFB = "SELECT p.id_pesanan, p.nama_menu, p.jumlah, p.total_harga, p.status_pesanan " +
-                "FROM pesanan_fb p " +
-                "JOIN reservasi r ON p.id_reservasi = r.id_reservasi " +
+        String sqlFB = "SELECT pm.id_pesanan, m.nama_menu, pm.jumlah, pm.subtotal AS total_harga, pm.status_pesanan " +
+                "FROM pesanan_makanan pm " +
+                "JOIN menu m ON pm.id_menu = m.id_menu " +
+                "JOIN reservasi r ON pm.id_reservasi = r.id_reservasi " +
                 "JOIN users u ON r.id_user = u.id_user " +
                 "WHERE LOWER(u.username) = LOWER(?) " +
-                "ORDER BY p.id_pesanan DESC";
+                "ORDER BY pm.id_pesanan DESC";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmtFB = conn.prepareStatement(sqlFB)) {
@@ -88,7 +89,8 @@ public class ReservasiDAO {
                         rsFB.getString("status_pesanan")
                 ));
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            e.printStackTrace(); // jangan disembunyikan, supaya error SQL ketahuan
         }
 
         return list;

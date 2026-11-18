@@ -1,4 +1,4 @@
-package com.homestaysafe.gui.panel;
+package com.homestaysafe.gui.panel.tamu;
 
 import com.homestaysafe.dao.MenuDAO;
 
@@ -90,7 +90,7 @@ public class FBCardPanel extends JPanel {
                 new EmptyBorder(15, 15, 15, 15)
         ));
 
-        JLabel lblCartHeader = new JLabel("🛒 Keranjang Pesanan");
+        JLabel lblCartHeader = new JLabel("Keranjang Pesanan");
         lblCartHeader.setFont(new Font("Segoe UI", Font.BOLD, 16));
         lblCartHeader.setForeground(COLOR_NAVY);
 
@@ -163,15 +163,16 @@ public class FBCardPanel extends JPanel {
             lblPrice.setForeground(COLOR_NAVY);
             lblPrice.setHorizontalAlignment(SwingConstants.RIGHT);
 
-            JButton btnDelete = new JButton("✕");
-            btnDelete.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            JButton btnDelete = new JButton("X");
+            btnDelete.setFont(new Font("Segoe UI", Font.BOLD, 12));
             btnDelete.setForeground(Color.WHITE);
             btnDelete.setBackground(new Color(239, 68, 68));
+            btnDelete.setMargin(new Insets(0, 0, 0, 0));
             btnDelete.setFocusPainted(false);
             btnDelete.setBorderPainted(false);
             btnDelete.setOpaque(true);
             btnDelete.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            btnDelete.setPreferredSize(new Dimension(32, 28));
+            btnDelete.setPreferredSize(new Dimension(28, 28));
             btnDelete.setToolTipText("Hapus item");
             btnDelete.addActionListener(e -> {
                 cartItems.remove(m);

@@ -40,27 +40,22 @@ public class RiwayatTransaksiManajerPanel extends JPanel {
 
         Calendar calStart = Calendar.getInstance();
         calStart.add(Calendar.DAY_OF_MONTH, -30);
-        JSpinner spinDari = new JSpinner(new SpinnerDateModel(calStart.getTime(), null, null, Calendar.DAY_OF_MONTH));
-        spinDari.setEditor(new JSpinner.DateEditor(spinDari, "yyyy-MM-dd"));
-        spinDari.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        spinDari.setPreferredSize(new Dimension(120, 36));
+        JSpinner spinDari = createStyledDateSpinner(calStart.getTime());
 
         Calendar calEnd = Calendar.getInstance();
         calEnd.add(Calendar.DAY_OF_MONTH, 30);
-        JSpinner spinSampai = new JSpinner(new SpinnerDateModel(calEnd.getTime(), null, null, Calendar.DAY_OF_MONTH));
-        spinSampai.setEditor(new JSpinner.DateEditor(spinSampai, "yyyy-MM-dd"));
-        spinSampai.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        spinSampai.setPreferredSize(new Dimension(120, 36));
+        JSpinner spinSampai = createStyledDateSpinner(calEnd.getTime());
 
-        JTextField txtKeyword = new JTextField(15);
+        JTextField txtKeyword = new JTextField(16);
         txtKeyword.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        txtKeyword.setPreferredSize(new Dimension(170, 36));
+        txtKeyword.setPreferredSize(new Dimension(190, 36));
+        txtKeyword.setToolTipText("Cari nama tamu, NIK, nomor kamar, tipe kamar (Standard/Deluxe/Suite), status, atau ID");
         txtKeyword.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(new Color(203, 213, 225), 1, true),
                 new EmptyBorder(4, 10, 4, 10)
         ));
 
-        JButton btnFilter = new JButton("Tampilkan Data");
+        JButton btnFilter = new JButton("Cari / Tampilkan");
         btnFilter.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btnFilter.setBackground(COLOR_GOLD);
         btnFilter.setForeground(Color.WHITE);
@@ -174,7 +169,6 @@ public class RiwayatTransaksiManajerPanel extends JPanel {
                 Date dDari = (Date) spinDari.getValue();
                 Date dSampai = (Date) spinSampai.getValue();
 
-                // Validasi: Dari tidak boleh lebih besar dari Sampai
                 if (dDari.after(dSampai)) {
                     JOptionPane.showMessageDialog(this,
                             "Tanggal 'Dari' tidak boleh lebih besar dari tanggal 'Sampai'!",
@@ -199,6 +193,24 @@ public class RiwayatTransaksiManajerPanel extends JPanel {
         btnFilter.addActionListener(e -> reload.run());
         txtKeyword.addActionListener(e -> reload.run());
         reload.run();
+    }
+
+    private JSpinner createStyledDateSpinner(Date initialDate) {
+        JSpinner spinner = new JSpinner(new SpinnerDateModel(initialDate, null, null, Calendar.DAY_OF_MONTH));
+        JSpinner.DateEditor editor = new JSpinner.DateEditor(spinner, "yyyy-MM-dd");
+        spinner.setEditor(editor);
+        spinner.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        spinner.setPreferredSize(new Dimension(125, 36));
+        spinner.setBorder(new LineBorder(new Color(203, 213, 225), 1, true));
+        spinner.setToolTipText("Klik angka tahun/bulan/tanggal untuk mengetik langsung atau gunakan panah atas/bawah");
+
+        JFormattedTextField tf = editor.getTextField();
+        tf.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        tf.setHorizontalAlignment(SwingConstants.CENTER);
+        tf.setBackground(Color.WHITE);
+        tf.setBorder(new EmptyBorder(4, 6, 4, 6));
+
+        return spinner;
     }
 
     private void loadData(String tglDari, String tglSampai, String keyword) {

@@ -1,4 +1,4 @@
-package com.homestaysafe.gui.panel;
+package com.homestaysafe.gui.panel.tamu;
 
 import com.homestaysafe.dao.MenuDAO;
 import com.homestaysafe.dao.ReservasiDAO;
@@ -299,6 +299,12 @@ public class RiwayatPanel extends JPanel {
         List<ReservasiDAO.RiwayatItem> listKamar = reservasiDAO.getRiwayatByUsername(usernameTamu);
 
         for (ReservasiDAO.RiwayatItem r : listKamar) {
+            String jenis = r.getJenisPesanan() != null ? r.getJenisPesanan().toLowerCase() : "";
+            // Lewati baris "Food & Beverage" yang ikut terbawa dari ReservasiDAO
+            if (jenis.contains("food") || jenis.contains("beverage") || jenis.contains("f&b") || jenis.contains("makanan")) {
+                continue;
+            }
+
             if (!r.getStatus().equalsIgnoreCase("Ditolak") && !r.getStatus().equalsIgnoreCase("Dibatalkan")) {
                 totalKamar += r.getTotal();
             }

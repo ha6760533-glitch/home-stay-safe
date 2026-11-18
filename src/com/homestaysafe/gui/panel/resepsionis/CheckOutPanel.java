@@ -1,6 +1,7 @@
 package com.homestaysafe.gui.panel.resepsionis;
 
 import com.homestaysafe.dao.ResepsionisDAO;
+import com.homestaysafe.model.Reservasi;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -9,12 +10,13 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.time.Duration;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -24,10 +26,6 @@ public class CheckOutPanel extends JPanel {
     private final Color COLOR_BG = new Color(245, 247, 250);
     private final Color COLOR_GOLD = new Color(197, 168, 128);
     private final Color COLOR_BORDER = new Color(226, 232, 240);
-
-    // Tarif denda keterlambatan per jam (Rp 50.000 / jam lewat pukul 12:00)
-    private static final double TARIF_DENDA_PER_JAM = 50000.0;
-    private static final LocalTime JAM_BATAS_CHECKOUT = LocalTime.of(12, 0);
 
     private final ResepsionisDAO dao = new ResepsionisDAO();
     private final DefaultTableModel model;
@@ -200,26 +198,25 @@ public class CheckOutPanel extends JPanel {
 
         if (detail == null) return;
 
-        String nama = detail.getNamaTamu();
-        String noKamar = detail.getNoKamar();
-        double kamar = detail.getTotalHarga();
         double fb = dao.getTagihanMakanan(idRes);
         List<ResepsionisDAO.RincianFBItem> items = dao.getRincianMakanan(idRes);
 
-        LocalDate tglRencana = LocalDate.parse(detail.getTglCheckout().substring(0, 10));
-        LocalDateTime batasCheckOut = LocalDateTime.of(tglRencana, JAM_BATAS_CHECKOUT);
+        // OOP: aturan denda & nota berada di model Reservasi, bukan di panel GUI
+        Reservasi reservasi = buatReservasi(detail, fb);
+        String nama = reservasi.getNamaTamu();
+        String noKamar = reservasi.getNoKamar();
+        double kamar = reservasi.getTotalBiaya();
+
+        LocalDateTime batasCheckOut = reservasi.getBatasCheckout();
         LocalDateTime waktuSekarang = LocalDateTime.now();
 
-        long jamTelat = 0;
-        if (waktuSekarang.isAfter(batasCheckOut)) {
-            long menitTelat = Duration.between(batasCheckOut, waktuSekarang).toMinutes();
-            jamTelat = (long) Math.ceil(menitTelat / 60.0); // Pembulatan ke atas per jam
-        }
-        double dendaTelat = jamTelat * TARIF_DENDA_PER_JAM;
+        long jamTelat = reservasi.hitungJamTelat(waktuSekarang);
+        double dendaTelat = reservasi.hitungDenda(waktuSekarang); // polymorphism via interface Dendable
+        reservasi.setDenda(dendaTelat);
 
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm");
         String statusWaktu = jamTelat > 0
-                ? String.format("TERLAMBAT %d JAM (Denda Otomatis: Rp %,.0f @ Rp %,.0f/jam)", jamTelat, dendaTelat, TARIF_DENDA_PER_JAM)
+                ? String.format("TERLAMBAT %d JAM (Denda Otomatis: Rp %,.0f @ Rp %,.0f/jam)", jamTelat, dendaTelat, Reservasi.TARIF_DENDA_PER_JAM)
                 : "TEPAT WAKTU (Denda Keterlambatan: Rp 0)";
 
         String pesanKonfirmasi = String.format(
@@ -242,21 +239,40 @@ public class CheckOutPanel extends JPanel {
             dendaKerusakan = Math.max(0, Double.parseDouble(inDendaKerusakan.trim()));
         } catch (Exception ignored) {}
 
-        double totalDenda = dendaTelat + dendaKerusakan;
-        double grandTotal = kamar + fb + totalDenda;
+        reservasi.setDendaKerusakan(dendaKerusakan);
+        double grandTotal = reservasi.hitungGrandTotal();
 
         if (dao.prosesCheckOut(idRes, grandTotal)) {
-            showNotaDialog(idRes, nama, noKamar, kamar, fb, jamTelat, dendaTelat, dendaKerusakan, grandTotal, items);
+            reservasi.setStatusReservasi("Selesai");
+            reservasi.setTglCheckoutAktual(waktuSekarang);
+            showNotaDialog(reservasi, idRes, nama, noKamar, kamar, fb, jamTelat, dendaTelat, dendaKerusakan, grandTotal, items);
             contentPanel.add(new CheckOutPanel(contentPanel, cardLayout), "CheckOut");
             cardLayout.show(contentPanel, "CheckOut");
         }
     }
 
-    private void showNotaDialog(int idRes, String nama, String noKamar, double kamar, double fb,
+    /** Membangun object model Reservasi dari data baris yang dipilih di tabel. */
+    private Reservasi buatReservasi(ResepsionisDAO.ReservasiDetail d, double tagihanFB) {
+        Reservasi r = new Reservasi();
+        r.setIdReservasi(d.getIdReservasi());
+        r.setNamaTamu(d.getNamaTamu());
+        r.setNoKamar(d.getNoKamar());
+        r.setTipeKamar(d.getTipeKamar());
+        if (d.getTglCheckin() != null && d.getTglCheckin().length() >= 10) {
+            r.setTglCheckin(LocalDate.parse(d.getTglCheckin().substring(0, 10)));
+        }
+        r.setTglCheckoutRencana(LocalDate.parse(d.getTglCheckout().substring(0, 10)));
+        r.setTotalBiaya(d.getTotalHarga());
+        r.setTotalMakanan(tagihanFB);
+        r.setStatusReservasi(d.getStatusReservasi());
+        return r;
+    }
+
+    private void showNotaDialog(Reservasi reservasi, int idRes, String nama, String noKamar, double kamar, double fb,
                                 long jamTelat, double dendaTelat, double dendaKerusakan,
                                 double total, List<ResepsionisDAO.RincianFBItem> items) {
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Nota Resmi - RSV-" + idRes, Dialog.ModalityType.APPLICATION_MODAL);
-        dialog.setSize(500, 580);
+        dialog.setSize(560, 580);
         dialog.setLocationRelativeTo(this);
         dialog.setResizable(false);
 
@@ -295,13 +311,16 @@ public class CheckOutPanel extends JPanel {
 
         addPair(grid, "TOTAL PEMBAYARAN LUNAS", String.format("Rp %,.0f", total), true);
 
-        JPanel btns = new JPanel(new GridLayout(1, 2, 10, 0));
+        JPanel btns = new JPanel(new GridLayout(1, 3, 10, 0));
         btns.setOpaque(false);
-        JButton btnPrint = makeBtn("Simpan / Cetak HTML", COLOR_NAVY, Color.WHITE, 180, 38);
-        JButton btnClose = makeBtn("Selesai & Tutup", COLOR_GOLD, Color.WHITE, 180, 38);
+        JButton btnPrint = makeBtn("Simpan / Cetak HTML", COLOR_NAVY, Color.WHITE, 160, 38);
+        JButton btnTxt = makeBtn("Simpan Nota (.txt)", COLOR_NAVY, Color.WHITE, 160, 38);
+        JButton btnClose = makeBtn("Selesai & Tutup", COLOR_GOLD, Color.WHITE, 160, 38);
+        btnTxt.addActionListener(e -> simpanNotaTeks(dialog, reservasi));
         btnPrint.addActionListener(e -> simpanNotaHTML(dialog, idRes, nama, noKamar, waktu, kamar, fb, jamTelat, dendaTelat, dendaKerusakan, total, items));
         btnClose.addActionListener(e -> dialog.dispose());
         btns.add(btnPrint);
+        btns.add(btnTxt);
         btns.add(btnClose);
 
         root.add(hdr, BorderLayout.NORTH);
@@ -348,6 +367,21 @@ public class CheckOutPanel extends JPanel {
         c.add(t);
         c.add(val);
         return c;
+    }
+
+    /** Menyimpan nota teks yang dihasilkan oleh Reservasi.cetakNota() (interface Cetakable). */
+    private void simpanNotaTeks(Component parent, Reservasi reservasi) {
+        JFileChooser fc = new JFileChooser();
+        fc.setSelectedFile(new File("Nota_Checkout_RSV-" + reservasi.getIdReservasi() + ".txt"));
+        if (fc.showSaveDialog(parent) == JFileChooser.APPROVE_OPTION) {
+            try (PrintWriter out = new PrintWriter(new OutputStreamWriter(
+                    new FileOutputStream(fc.getSelectedFile()), StandardCharsets.UTF_8))) {
+                out.print(reservasi.cetakNota());
+                JOptionPane.showMessageDialog(parent, "Nota berhasil disimpan:\n" + fc.getSelectedFile().getAbsolutePath());
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(parent, "Gagal menyimpan: " + ex.getMessage());
+            }
+        }
     }
 
     private void simpanNotaHTML(Component parent, int idRes, String nama, String noKamar, String waktu,

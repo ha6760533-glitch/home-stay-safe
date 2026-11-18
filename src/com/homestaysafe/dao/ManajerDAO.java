@@ -181,7 +181,8 @@ public class ManajerDAO {
                 "JOIN users u ON r.id_user = u.id_user " +
                 "WHERE r.tgl_checkin BETWEEN ? AND ? " +
                 "AND (u.nama ILIKE ? OR COALESCE(u.no_identitas, '') ILIKE ? " +
-                "     OR COALESCE(r.no_kamar, '') ILIKE ? OR r.status_reservasi ILIKE ?) " +
+                "     OR COALESCE(r.no_kamar, '') ILIKE ? OR COALESCE(r.tipe_kamar, '') ILIKE ? " +
+                "     OR r.status_reservasi ILIKE ? OR ('RSV-' || r.id_reservasi) ILIKE ?) " +
                 "ORDER BY r.id_reservasi DESC";
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -195,6 +196,8 @@ public class ManajerDAO {
             stmt.setString(4, kw);
             stmt.setString(5, kw);
             stmt.setString(6, kw);
+            stmt.setString(7, kw);
+            stmt.setString(8, kw);
 
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {

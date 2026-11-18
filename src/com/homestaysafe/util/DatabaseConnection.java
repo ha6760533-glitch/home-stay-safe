@@ -5,10 +5,14 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DatabaseConnection {
-    // URL ke database PostgreSQL milikmu ('home_stay_safe')
-    private static final String URL = "jdbc:postgresql://localhost:5432/home_stay_safe";
-    private static final String USER = "postgres";
-    private static final String PASSWORD = "h"; // ⚠️ GANTI SESUAI PASSWORD POSTGRESQL KAMU!
+    private static final String URL = env("DB_URL", "jdbc:postgresql://localhost:5432/home_stay_safe");
+    private static final String USER = env("DB_USER", "postgres");
+    private static final String PASSWORD = env("DB_PASSWORD", "h"); // default; sesuaikan dengan password PostgreSQL kamu
+
+    private static String env(String nama, String bawaan) {
+        String nilai = System.getenv(nama);
+        return (nilai == null || nilai.isBlank()) ? bawaan : nilai;
+    }
 
     public static Connection getConnection() throws SQLException {
         try {
