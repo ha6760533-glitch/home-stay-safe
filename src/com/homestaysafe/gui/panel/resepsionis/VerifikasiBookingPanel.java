@@ -1,6 +1,7 @@
 package com.homestaysafe.gui.panel.resepsionis;
 
 import com.homestaysafe.dao.ResepsionisDAO;
+import com.homestaysafe.util.UIHelper;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -50,15 +51,13 @@ public class VerifikasiBookingPanel extends JPanel {
         JTextField txtSearch = new JTextField(20);
         txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         txtSearch.setPreferredSize(new Dimension(220, 36));
-        txtSearch.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(new Color(203, 213, 225), 1, true),
-                new EmptyBorder(4, 10, 4, 10)
-        ));
+        txtSearch.setBorder(UIHelper.createRoundedFieldBorder(new Color(203, 213, 225), 12));
 
-        JButton btnSearch = createStyledButton("Cari", COLOR_NAVY, Color.WHITE, 80, 36);
-        JButton btnReset = createStyledButton("Refresh", Color.WHITE, COLOR_NAVY, 85, 36);
-        btnReset.setBorder(new LineBorder(new Color(203, 213, 225), 1, true));
-        btnReset.setBorderPainted(true);
+        JButton btnSearch = UIHelper.createRoundedButton("Cari", COLOR_NAVY, UIHelper.COLOR_NAVY_HOVER, Color.WHITE, 12);
+        btnSearch.setPreferredSize(new Dimension(85, 36));
+
+        JButton btnReset = UIHelper.createRoundedButton("Refresh", new Color(226, 232, 240), new Color(203, 213, 225), COLOR_NAVY, 12);
+        btnReset.setPreferredSize(new Dimension(90, 36));
 
         searchPanel.add(lblCari);
         searchPanel.add(txtSearch);
@@ -76,7 +75,7 @@ public class VerifikasiBookingPanel extends JPanel {
         northContainer.add(topHeader, BorderLayout.NORTH);
         northContainer.add(statsRow, BorderLayout.SOUTH);
 
-        String[] columns = {"ID Booking", "Username", "Nama Tamu", "No Identitas", "Kamar Dipesan", "Check-in", "Check-out", "Total Biaya", "Status"};
+        String[] columns = {"ID Booking", "Username", "Nama Tamu", "No Identitas", "Tipe Kamar", "Check-in", "Check-out", "Total Biaya", "Status"};
         model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int r, int c) { return false; }
@@ -105,7 +104,7 @@ public class VerifikasiBookingPanel extends JPanel {
         table.getColumnModel().getColumn(1).setCellRenderer(leftRenderer);
         table.getColumnModel().getColumn(2).setCellRenderer(leftRenderer);
         table.getColumnModel().getColumn(3).setCellRenderer(centerRenderer);
-        table.getColumnModel().getColumn(4).setCellRenderer(leftRenderer);
+        table.getColumnModel().getColumn(4).setCellRenderer(centerRenderer);
         table.getColumnModel().getColumn(5).setCellRenderer(centerRenderer);
         table.getColumnModel().getColumn(6).setCellRenderer(centerRenderer);
         table.getColumnModel().getColumn(7).setCellRenderer(rightRenderer);
@@ -127,7 +126,8 @@ public class VerifikasiBookingPanel extends JPanel {
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         actionPanel.setOpaque(false);
 
-        JButton btnKonfirmasi = createStyledButton("Periksa & Konfirmasi Pemesanan", COLOR_GOLD, Color.WHITE, 265, 42);
+        JButton btnKonfirmasi = UIHelper.createRoundedButton("Periksa & Konfirmasi Pemesanan", COLOR_GOLD, UIHelper.COLOR_GOLD_HOVER, Color.WHITE, 14);
+        btnKonfirmasi.setPreferredSize(new Dimension(265, 42));
         btnKonfirmasi.addActionListener(e -> {
             int row = table.getSelectedRow();
             if (row == -1) {
@@ -200,8 +200,8 @@ public class VerifikasiBookingPanel extends JPanel {
         infoGrid.add(new JLabel(detail.getNamaTamu()));
         infoGrid.add(makeBoldLabel("No. Identitas (NIK/KTP):"));
         infoGrid.add(new JLabel(detail.getNoIdentitas()));
-        infoGrid.add(makeBoldLabel("Kamar yang Dipesan:"));
-        infoGrid.add(new JLabel("No. " + detail.getNoKamar() + " (" + detail.getTipeKamar() + ")"));
+        infoGrid.add(makeBoldLabel("Tipe Kamar Dipesan:"));
+        infoGrid.add(new JLabel(detail.getTipeKamar()));
         infoGrid.add(makeBoldLabel("Jadwal Menginap:"));
         infoGrid.add(new JLabel(detail.getTglCheckin() + " s/d " + detail.getTglCheckout()));
         infoGrid.add(makeBoldLabel("Total Biaya Kamar:"));
@@ -209,18 +209,23 @@ public class VerifikasiBookingPanel extends JPanel {
         lblHarga.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lblHarga.setForeground(new Color(5, 150, 105));
         infoGrid.add(lblHarga);
-        infoGrid.add(makeBoldLabel("Status Saat Ini:"));
-        infoGrid.add(new JLabel(detail.getStatusReservasi()));
+        infoGrid.add(makeBoldLabel("Alokasi Nomor Kamar:"));
+        infoGrid.add(new JLabel("Ditetapkan saat Check-In"));
 
         JPanel btnPanel = new JPanel(new GridLayout(1, 2, 12, 0));
         btnPanel.setOpaque(false);
 
-        JButton btnTolak = createStyledButton("Ditolak / Koreksi", new Color(220, 38, 38), Color.WHITE, 180, 40);
-        JButton btnSetuju = createStyledButton("Disetujui (Valid)", new Color(5, 150, 105), Color.WHITE, 180, 40);
+        JButton btnTolak = UIHelper.createRoundedButton("Ditolak / Koreksi", new Color(220, 38, 38), new Color(185, 28, 28), Color.WHITE, 12);
+        btnTolak.setPreferredSize(new Dimension(180, 40));
+
+        JButton btnSetuju = UIHelper.createRoundedButton("Disetujui (Valid)", new Color(5, 150, 105), new Color(4, 120, 87), Color.WHITE, 12);
+        btnSetuju.setPreferredSize(new Dimension(180, 40));
 
         btnSetuju.addActionListener(e -> {
             if (dao.updateStatusReservasi(detail.getIdReservasi(), "Disetujui")) {
-                JOptionPane.showMessageDialog(dialog, "Pemesanan RSV-" + detail.getIdReservasi() + " telah DISETUJUI.", "Verifikasi Valid", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(dialog,
+                        "Pemesanan RSV-" + detail.getIdReservasi() + " telah DISETUJUI.\nNomor kamar akan ditetapkan saat tamu Check-In.",
+                        "Verifikasi Valid", JOptionPane.INFORMATION_MESSAGE);
                 dialog.dispose();
                 loadData(currentKeyword);
             }
@@ -264,7 +269,7 @@ public class VerifikasiBookingPanel extends JPanel {
                         r.getUsername(),
                         r.getNamaTamu(),
                         r.getNoIdentitas(),
-                        "No. " + r.getNoKamar() + " (" + r.getTipeKamar() + ")",
+                        r.getTipeKamar(),
                         r.getTglCheckin(),
                         r.getTglCheckout(),
                         String.format("Rp %,.0f", r.getTotalHarga()),
@@ -276,26 +281,9 @@ public class VerifikasiBookingPanel extends JPanel {
         lblTotalNominal.setText(String.format("Rp %,.0f", total));
     }
 
-    private JButton createStyledButton(String text, Color bg, Color fg, int w, int h) {
-        JButton btn = new JButton(text);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn.setBackground(bg);
-        btn.setForeground(fg);
-        btn.setPreferredSize(new Dimension(w, h));
-        btn.setFocusPainted(false);
-        btn.setOpaque(true);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        return btn;
-    }
-
     private JPanel createStatCard(String title, JLabel valLabel, Color accent) {
-        JPanel card = new JPanel(new GridLayout(2, 1, 2, 4));
-        card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(COLOR_BORDER, 1, true),
-                new EmptyBorder(12, 16, 12, 16)
-        ));
+        JPanel card = UIHelper.createRoundedCard(14, 12, 16);
+        card.setLayout(new GridLayout(2, 1, 2, 4));
         JLabel t = new JLabel(title);
         t.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         t.setForeground(new Color(100, 116, 139));

@@ -1,13 +1,13 @@
 package com.homestaysafe.gui;
 
-//import com.homestaysafe.gui.panel.manajer.KelolaKamarPanel;
+import com.homestaysafe.util.UIHelper;
+
 import com.homestaysafe.gui.panel.manajer.KelolaMenuPanel;
 import com.homestaysafe.gui.panel.manajer.LaporanPendapatanPanel;
 import com.homestaysafe.gui.panel.manajer.RiwayatTransaksiManajerPanel;
 import com.homestaysafe.gui.panel.manajer.StatistikKamarPanel;
 import com.homestaysafe.model.User;
 
-/** Dashboard untuk role Manajer. Kerangka UI diwarisi dari {@link BaseDashboardFrame}. */
 public class ManajerFrame extends BaseDashboardFrame {
 
     public ManajerFrame(User user) {
@@ -24,7 +24,6 @@ public class ManajerFrame extends BaseDashboardFrame {
     @Override protected String getProfileHeader() { return "PROFIL EKSEKUTIF MANAJER"; }
     @Override protected String getProfileSubHeader() { return "HomestaySafe Management System"; }
 
-    /** Perilaku lama ManajerFrame: sidebar tidak otomatis menutup. */
     @Override protected boolean isSidebarClosedAfterClick() { return false; }
 
     @Override
@@ -38,9 +37,9 @@ public class ManajerFrame extends BaseDashboardFrame {
 
     @Override
     protected void buildMenu() {
-        // Laporan Pendapatan ditaruh paling atas → jadi halaman default saat login
+
         addMenuItem("Laporan Pendapatan", "Pendapatan", LaporanPendapatanPanel::new);
-//        addMenuItem("Kelola Kamar", "KelolaKamar", KelolaKamarPanel::new);
+
         addMenuItem("Kelola Menu F&B", "KelolaMenu", KelolaMenuPanel::new);
         addMenuItem("Statistik Kamar Terfavorit", "Statistik", StatistikKamarPanel::new);
         addMenuItem("Riwayat Seluruh Transaksi", "Riwayat",

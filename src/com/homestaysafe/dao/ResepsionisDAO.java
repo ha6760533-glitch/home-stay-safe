@@ -69,7 +69,8 @@ public class ResepsionisDAO {
                 "r.tgl_checkin, r.tgl_checkout_rencana, r.total_biaya, r.status_reservasi " +
                 "FROM reservasi r " +
                 "JOIN users u ON r.id_user = u.id_user " +
-                "WHERE u.username ILIKE ? OR u.nama ILIKE ? OR COALESCE(u.no_identitas, '') ILIKE ? OR COALESCE(r.no_kamar, '') ILIKE ? " +
+                "WHERE u.username ILIKE ? OR u.nama ILIKE ? OR COALESCE(u.no_identitas, '') ILIKE ? " +
+                "OR COALESCE(r.no_kamar, '') ILIKE ? OR COALESCE(r.tipe_kamar, '') ILIKE ? " +
                 "ORDER BY r.id_reservasi DESC";
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -80,6 +81,7 @@ public class ResepsionisDAO {
             stmt.setString(2, kw);
             stmt.setString(3, kw);
             stmt.setString(4, kw);
+            stmt.setString(5, kw);
 
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
@@ -102,10 +104,67 @@ public class ResepsionisDAO {
         return list;
     }
 
-    /**
-     * @return {username, password} tamu, atau null bila penyimpanan gagal karena error database
-     * @throws JadwalBentrokException jika kamar sudah dipesan pada rentang tanggal tersebut
-     */
+    /** Mengambil daftar nomor kamar yang tersedia & tidak bentrok jadwal sesuai tipe kamar yang dipesan tamu */
+    public List<String> getNomorKamarKosongByTipe(String tipeKamar, String checkIn, String checkOut) {
+        List<String> listNoKamar = new ArrayList<>();
+        String sql = "SELECT k.no_kamar FROM kamar k " +
+                "WHERE TRIM(k.tipe_kamar) ILIKE TRIM(?) " +
+                "AND TRIM(k.status_kamar) ILIKE 'Tersedia' " +
+                "AND NOT EXISTS (" +
+                "    SELECT 1 FROM reservasi r " +
+                "    WHERE TRIM(r.no_kamar) = TRIM(k.no_kamar) " +
+                "    AND COALESCE(r.status_reservasi, '') NOT ILIKE '%Selesai%' " +
+                "    AND COALESCE(r.status_reservasi, '') NOT ILIKE '%Ditolak%' " +
+                "    AND COALESCE(r.status_reservasi, '') NOT ILIKE '%Dibatalkan%' " +
+                "    AND r.tgl_checkin < ?::date " +
+                "    AND r.tgl_checkout_rencana > ?::date" +
+                ") " +
+                "ORDER BY k.no_kamar ASC";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, tipeKamar);
+            stmt.setString(2, checkOut);
+            stmt.setString(3, checkIn);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                listNoKamar.add(rs.getString("no_kamar"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return listNoKamar;
+    }
+
+    /** Proses Check-In: menetapkan nomor kamar pilihan Resepsionis, ubah status reservasi ke 'Check-in', dan kunci kamar jadi 'Terisi' */
+    public boolean checkInDanTetapkanKamar(int idReservasi, String noKamarTerpilih) {
+        String sqlRes = "UPDATE reservasi SET no_kamar = ?, status_reservasi = 'Check-in' WHERE id_reservasi = ?";
+        String sqlKam = "UPDATE kamar SET status_kamar = 'Terisi' WHERE TRIM(no_kamar) = TRIM(?)";
+
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement psRes = conn.prepareStatement(sqlRes);
+                 PreparedStatement psKam = conn.prepareStatement(sqlKam)) {
+
+                psRes.setString(1, noKamarTerpilih.trim());
+                psRes.setInt(2, idReservasi);
+                int updated = psRes.executeUpdate();
+
+                psKam.setString(1, noKamarTerpilih.trim());
+                psKam.executeUpdate();
+
+                conn.commit();
+                return updated > 0;
+            } catch (Exception ex) {
+                conn.rollback();
+                ex.printStackTrace();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public String[] simpanPemesananOffline(String namaTamu, String noIdentitas, int idKamar, String checkIn, String checkOut, double totalHarga)
             throws JadwalBentrokException {
         KamarDAO kamarDAO = new KamarDAO();
@@ -160,7 +219,7 @@ public class ResepsionisDAO {
                     try (PreparedStatement psUser = conn.prepareStatement(sqlInsertUser)) {
                         psUser.setString(1, namaTamu.trim());
                         psUser.setString(2, usernameTamu);
-                        psUser.setString(3, PasswordUtil.hash(passwordTamu)); // simpan hash; password asli hanya ditampilkan ke resepsionis
+                        psUser.setString(3, PasswordUtil.hash(passwordTamu));
                         psUser.setString(4, noIdentitas.trim());
                         ResultSet rsNew = psUser.executeQuery();
                         if (rsNew.next()) {

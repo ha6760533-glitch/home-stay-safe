@@ -1,5 +1,7 @@
 package com.homestaysafe.gui.panel.resepsionis;
 
+import com.homestaysafe.util.UIHelper;
+
 import com.homestaysafe.dao.ResepsionisDAO;
 import com.homestaysafe.model.Reservasi;
 
@@ -58,17 +60,14 @@ public class CheckOutPanel extends JPanel {
         lblCari.setForeground(COLOR_NAVY);
 
         JTextField txtSearch = new JTextField(20);
-        txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         txtSearch.setPreferredSize(new Dimension(220, 36));
-        txtSearch.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(new Color(203, 213, 225), 1, true),
-                new EmptyBorder(4, 10, 4, 10)
-        ));
+        UIHelper.styleField(txtSearch);
 
-        JButton btnSearch = makeBtn("Cari", COLOR_NAVY, Color.WHITE, 80, 36);
-        JButton btnReset = makeBtn("Refresh", Color.WHITE, COLOR_NAVY, 85, 36);
-        btnReset.setBorder(new LineBorder(new Color(203, 213, 225), 1, true));
-        btnReset.setBorderPainted(true);
+        JButton btnSearch = UIHelper.createRoundedButton("Cari", COLOR_NAVY, UIHelper.COLOR_NAVY_HOVER, Color.WHITE, 12);
+        btnSearch.setPreferredSize(new Dimension(85, 36));
+
+        JButton btnReset = UIHelper.createRoundedButton("Refresh", new Color(226, 232, 240), new Color(203, 213, 225), COLOR_NAVY, 12);
+        btnReset.setPreferredSize(new Dimension(90, 36));
 
         searchBar.add(lblCari);
         searchBar.add(txtSearch);
@@ -139,7 +138,8 @@ public class CheckOutPanel extends JPanel {
 
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         bottom.setOpaque(false);
-        JButton btnCheckOut = makeBtn("Hitung Denda, Checkout & Cetak Nota", COLOR_GOLD, Color.WHITE, 290, 42);
+        JButton btnCheckOut = UIHelper.createRoundedButton("Hitung Denda, Checkout & Cetak Nota", COLOR_GOLD, UIHelper.COLOR_GOLD_HOVER, Color.WHITE, 14);
+        btnCheckOut.setPreferredSize(new Dimension(295, 42));
         btnCheckOut.addActionListener(e -> prosesAksiCheckOut(table, contentPanel, cardLayout));
         bottom.add(btnCheckOut);
 
@@ -201,7 +201,6 @@ public class CheckOutPanel extends JPanel {
         double fb = dao.getTagihanMakanan(idRes);
         List<ResepsionisDAO.RincianFBItem> items = dao.getRincianMakanan(idRes);
 
-        // OOP: aturan denda & nota berada di model Reservasi, bukan di panel GUI
         Reservasi reservasi = buatReservasi(detail, fb);
         String nama = reservasi.getNamaTamu();
         String noKamar = reservasi.getNoKamar();
@@ -211,7 +210,7 @@ public class CheckOutPanel extends JPanel {
         LocalDateTime waktuSekarang = LocalDateTime.now();
 
         long jamTelat = reservasi.hitungJamTelat(waktuSekarang);
-        double dendaTelat = reservasi.hitungDenda(waktuSekarang); // polymorphism via interface Dendable
+        double dendaTelat = reservasi.hitungDenda(waktuSekarang);
         reservasi.setDenda(dendaTelat);
 
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm");
@@ -251,7 +250,6 @@ public class CheckOutPanel extends JPanel {
         }
     }
 
-    /** Membangun object model Reservasi dari data baris yang dipilih di tabel. */
     private Reservasi buatReservasi(ResepsionisDAO.ReservasiDetail d, double tagihanFB) {
         Reservasi r = new Reservasi();
         r.setIdReservasi(d.getIdReservasi());
@@ -343,22 +341,15 @@ public class CheckOutPanel extends JPanel {
     }
 
     private JButton makeBtn(String text, Color bg, Color fg, int w, int h) {
-        JButton b = new JButton(text);
-        b.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        b.setBackground(bg);
-        b.setForeground(fg);
+        Color hover = bg.equals(Color.WHITE) ? new Color(241, 245, 249) : bg.darker();
+        JButton b = UIHelper.createRoundedButton(text, bg, hover, fg, 12);
         b.setPreferredSize(new Dimension(w, h));
-        b.setFocusPainted(false);
-        b.setOpaque(true);
-        b.setBorderPainted(false);
-        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return b;
     }
 
     private JPanel makeCard(String title, JLabel val, Color accent) {
-        JPanel c = new JPanel(new GridLayout(2, 1, 2, 4));
-        c.setBackground(Color.WHITE);
-        c.setBorder(BorderFactory.createCompoundBorder(new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(12, 16, 12, 16)));
+        JPanel c = UIHelper.createRoundedCard(14, 12, 16);
+        c.setLayout(new GridLayout(2, 1, 2, 4));
         JLabel t = new JLabel(title);
         t.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         t.setForeground(new Color(100, 116, 139));
@@ -369,7 +360,6 @@ public class CheckOutPanel extends JPanel {
         return c;
     }
 
-    /** Menyimpan nota teks yang dihasilkan oleh Reservasi.cetakNota() (interface Cetakable). */
     private void simpanNotaTeks(Component parent, Reservasi reservasi) {
         JFileChooser fc = new JFileChooser();
         fc.setSelectedFile(new File("Nota_Checkout_RSV-" + reservasi.getIdReservasi() + ".txt"));

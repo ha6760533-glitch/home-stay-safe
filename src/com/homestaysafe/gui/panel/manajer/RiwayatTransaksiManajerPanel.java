@@ -1,5 +1,6 @@
 package com.homestaysafe.gui.panel.manajer;
 
+import com.homestaysafe.util.UIHelper;
 import com.homestaysafe.dao.ManajerDAO;
 
 import javax.swing.*;
@@ -47,23 +48,13 @@ public class RiwayatTransaksiManajerPanel extends JPanel {
         JSpinner spinSampai = createStyledDateSpinner(calEnd.getTime());
 
         JTextField txtKeyword = new JTextField(16);
-        txtKeyword.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         txtKeyword.setPreferredSize(new Dimension(190, 36));
         txtKeyword.setToolTipText("Cari nama tamu, NIK, nomor kamar, tipe kamar (Standard/Deluxe/Suite), status, atau ID");
-        txtKeyword.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(new Color(203, 213, 225), 1, true),
-                new EmptyBorder(4, 10, 4, 10)
-        ));
+        UIHelper.styleField(txtKeyword);
 
-        JButton btnFilter = new JButton("Cari / Tampilkan");
-        btnFilter.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnFilter.setBackground(COLOR_GOLD);
-        btnFilter.setForeground(Color.WHITE);
-        btnFilter.setPreferredSize(new Dimension(140, 36));
-        btnFilter.setFocusPainted(false);
-        btnFilter.setOpaque(true);
-        btnFilter.setBorderPainted(false);
-        btnFilter.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        JButton btnFilter = UIHelper.createRoundedButton("Cari / Tampilkan", COLOR_GOLD, UIHelper.COLOR_GOLD_HOVER, Color.WHITE, 12);
+        btnFilter.setBorder(new EmptyBorder(8, 16, 8, 16));
+        btnFilter.setPreferredSize(new Dimension(150, 36));
 
         JLabel l1 = new JLabel("Dari:");
         l1.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -199,9 +190,8 @@ public class RiwayatTransaksiManajerPanel extends JPanel {
         JSpinner spinner = new JSpinner(new SpinnerDateModel(initialDate, null, null, Calendar.DAY_OF_MONTH));
         JSpinner.DateEditor editor = new JSpinner.DateEditor(spinner, "yyyy-MM-dd");
         spinner.setEditor(editor);
-        spinner.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         spinner.setPreferredSize(new Dimension(125, 36));
-        spinner.setBorder(new LineBorder(new Color(203, 213, 225), 1, true));
+        UIHelper.styleField(spinner);
         spinner.setToolTipText("Klik angka tahun/bulan/tanggal untuk mengetik langsung atau gunakan panah atas/bawah");
 
         JFormattedTextField tf = editor.getTextField();

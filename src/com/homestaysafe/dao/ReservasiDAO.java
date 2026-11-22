@@ -49,8 +49,13 @@ public class ReservasiDAO {
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
-                String detailKamar = "Kamar No. " + rs.getString("no_kamar") +
-                        " (" + rs.getString("tipe_kamar") + ") | " +
+                String noKamar = rs.getString("no_kamar");
+                String tipeKamar = rs.getString("tipe_kamar");
+                String infoKamar = (noKamar == null || noKamar.equals("-") || noKamar.trim().isEmpty())
+                        ? "Tipe " + tipeKamar
+                        : "Kamar No. " + noKamar + " (" + tipeKamar + ")";
+
+                String detailKamar = infoKamar + " | " +
                         rs.getString("tgl_checkin") + " s/d " + rs.getString("tgl_checkout_rencana");
 
                 list.add(new RiwayatItem(
@@ -90,7 +95,7 @@ public class ReservasiDAO {
                 ));
             }
         } catch (Exception e) {
-            e.printStackTrace(); // jangan disembunyikan, supaya error SQL ketahuan
+            e.printStackTrace();
         }
 
         return list;

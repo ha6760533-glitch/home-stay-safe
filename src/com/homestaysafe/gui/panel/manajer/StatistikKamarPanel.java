@@ -1,5 +1,6 @@
 package com.homestaysafe.gui.panel.manajer;
 
+import com.homestaysafe.util.UIHelper;
 import com.homestaysafe.dao.ManajerDAO;
 
 import javax.swing.*;
@@ -8,6 +9,7 @@ import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.geom.RoundRectangle2D;
 import java.util.List;
 
 public class StatistikKamarPanel extends JPanel {
@@ -42,18 +44,11 @@ public class StatistikKamarPanel extends JPanel {
 
         JComboBox<String> cbWaktu = new JComboBox<>(new String[]{"Semua Waktu", "7 Hari Terakhir", "Bulan Ini", "Tahun Ini"});
         cbWaktu.setPreferredSize(new Dimension(175, 36));
-        cbWaktu.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        cbWaktu.setBackground(Color.WHITE);
+        UIHelper.styleField(cbWaktu);
 
-        JButton btnAnalisis = new JButton("Analisis Statistik");
-        btnAnalisis.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnAnalisis.setBackground(COLOR_GOLD);
-        btnAnalisis.setForeground(Color.WHITE);
+        JButton btnAnalisis = UIHelper.createRoundedButton("Analisis Statistik", COLOR_GOLD, UIHelper.COLOR_GOLD_HOVER, Color.WHITE, 12);
+        btnAnalisis.setBorder(new EmptyBorder(8, 16, 8, 16));
         btnAnalisis.setPreferredSize(new Dimension(150, 36));
-        btnAnalisis.setFocusPainted(false);
-        btnAnalisis.setOpaque(true);
-        btnAnalisis.setBorderPainted(false);
-        btnAnalisis.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         filterPanel.add(lblFilter);
         filterPanel.add(cbWaktu);
@@ -62,12 +57,21 @@ public class StatistikKamarPanel extends JPanel {
         topHeader.add(lblTitle, BorderLayout.NORTH);
         topHeader.add(filterPanel, BorderLayout.SOUTH);
 
-        JPanel highlightCard = new JPanel(new GridLayout(2, 1, 2, 4));
-        highlightCard.setBackground(COLOR_NAVY);
-        highlightCard.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(COLOR_GOLD, 2, true),
-                new EmptyBorder(16, 20, 16, 20)
-        ));
+        JPanel highlightCard = new JPanel(new GridLayout(2, 1, 2, 4)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(COLOR_NAVY);
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 16, 16));
+                g2.setColor(COLOR_GOLD);
+                g2.setStroke(new BasicStroke(2f));
+                g2.draw(new RoundRectangle2D.Float(1, 1, getWidth() - 3, getHeight() - 3, 16, 16));
+                g2.dispose();
+            }
+        };
+        highlightCard.setOpaque(false);
+        highlightCard.setBorder(new EmptyBorder(16, 20, 16, 20));
 
         JLabel lblBadge = new JLabel("KAMAR TERFAVORIT PERINGKAT #1 (FREKUENSI TERTINGGI)");
         lblBadge.setFont(new Font("Segoe UI", Font.BOLD, 11));

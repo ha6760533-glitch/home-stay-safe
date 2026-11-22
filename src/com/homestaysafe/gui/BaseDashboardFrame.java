@@ -1,26 +1,16 @@
 package com.homestaysafe.gui;
 
+import com.homestaysafe.util.UIHelper;
 import com.homestaysafe.model.User;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.geom.RoundRectangle2D;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-/**
- * Abstract class dasar untuk semua dashboard (Tamu, Resepsionis, Manajer).
- *
- * Pola Template Method: kerangka tampilan (header, sidebar, dialog profil, logout)
- * ditulis SEKALI di sini, sedangkan bagian yang berbeda per role (judul, menu, data
- * profil) dipaksakan lewat method abstract yang di-override subclass.
- *
- * Cara pakai di subclass: panggil {@link #initUI()} di akhir constructor.
- */
 public abstract class BaseDashboardFrame extends JFrame {
 
     protected static final Color COLOR_NAVY = new Color(15, 23, 42);
@@ -42,27 +32,18 @@ public abstract class BaseDashboardFrame extends JFrame {
         this.user = user;
     }
 
-    // ===== Bagian yang WAJIB berbeda per role (abstract) =====
-
-    /** Contoh: "Portal Tamu" → judul jendela "HomestaySafe - Portal Tamu (username)". */
     protected abstract String getPortalTitle();
     protected abstract String getBrandText();
-    /** Contoh: "Tamu" → label header "Tamu: username". */
     protected abstract String getUserPrefix();
     protected abstract String getProfileTooltip();
     protected abstract String getMenuSectionTitle();
     protected abstract String getProfileDialogTitle();
     protected abstract String getProfileHeader();
     protected abstract String getProfileSubHeader();
-    /** Pasangan {label, nilai} untuk ditampilkan di dialog profil. */
     protected abstract String[][] getProfileRows();
-    /** Daftarkan menu sidebar dengan memanggil {@link #addMenuItem}. */
     protected abstract void buildMenu();
 
-    /** Hook opsional: apakah sidebar ditutup otomatis setelah menu diklik. */
     protected boolean isSidebarClosedAfterClick() { return true; }
-
-    // ===== Kerangka tampilan (dipakai bersama) =====
 
     protected final void initUI() {
         setTitle("HomestaySafe - " + getPortalTitle() + " (" + user.getUsername() + ")");
@@ -73,18 +54,18 @@ public abstract class BaseDashboardFrame extends JFrame {
 
         sidebarPanel.setLayout(new BoxLayout(sidebarPanel, BoxLayout.Y_AXIS));
         sidebarPanel.setBackground(COLOR_NAVY);
-        sidebarPanel.setPreferredSize(new Dimension(250, 0));
-        sidebarPanel.setBorder(BorderFactory.createMatteBorder(1, 1, 0, 0, COLOR_SIDEBAR_HOVER));
+        sidebarPanel.setPreferredSize(new Dimension(255, 0));
+        sidebarPanel.setBorder(new EmptyBorder(10, 12, 16, 12));
         sidebarPanel.setVisible(false);
 
         JLabel lblMenuSection = new JLabel(getMenuSectionTitle());
         lblMenuSection.setFont(new Font("Segoe UI", Font.BOLD, 11));
         lblMenuSection.setForeground(COLOR_GOLD);
-        lblMenuSection.setBorder(new EmptyBorder(22, 22, 10, 15));
+        lblMenuSection.setBorder(new EmptyBorder(14, 14, 12, 10));
         lblMenuSection.setAlignmentX(Component.LEFT_ALIGNMENT);
         sidebarPanel.add(lblMenuSection);
 
-        buildMenu(); // diisi oleh subclass
+        buildMenu();
 
         sidebarPanel.add(Box.createVerticalGlue());
         contentPanel.setBackground(COLOR_BG);
@@ -96,10 +77,6 @@ public abstract class BaseDashboardFrame extends JFrame {
         if (defaultPageKey != null) cardLayout.show(contentPanel, defaultPageKey);
     }
 
-    /**
-     * Menambah satu menu sidebar sekaligus mendaftarkan halamannya.
-     * Halaman pertama yang didaftarkan menjadi halaman awal.
-     */
     protected final void addMenuItem(String text, String pageKey, Supplier<JPanel> panelFactory) {
         factories.put(pageKey, panelFactory);
         JPanel initial = panelFactory.get();
@@ -111,9 +88,9 @@ public abstract class BaseDashboardFrame extends JFrame {
             showPage(pageKey);
             if (isSidebarClosedAfterClick()) toggleSidebar();
         }));
+        sidebarPanel.add(Box.createVerticalStrut(6));
     }
 
-    /** Membuat ulang halaman (agar datanya segar) lalu menampilkannya. */
     private void showPage(String pageKey) {
         JPanel old = pages.get(pageKey);
         if (old != null) contentPanel.remove(old);
@@ -126,39 +103,49 @@ public abstract class BaseDashboardFrame extends JFrame {
     private JPanel buildHeader() {
         JPanel header = new JPanel(new BorderLayout());
         header.setBackground(COLOR_NAVY);
-        header.setPreferredSize(new Dimension(1240, 68));
-        header.setBorder(new EmptyBorder(0, 25, 0, 25));
+        header.setPreferredSize(new Dimension(1240, 70));
+        header.setBorder(new EmptyBorder(0, 28, 0, 28));
 
         JLabel lblBrand = new JLabel(getBrandText());
         lblBrand.setFont(new Font("Serif", Font.BOLD, 22));
         lblBrand.setForeground(COLOR_GOLD);
 
-        JPanel rightHeader = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 13));
+        JPanel rightHeader = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 14));
         rightHeader.setOpaque(false);
 
         JLabel lblUser = new JLabel(getUserPrefix() + ": " + user.getUsername());
         lblUser.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lblUser.setForeground(Color.WHITE);
 
-        JButton btnProfile = new JButton(new UserAvatarIcon());
-        btnProfile.setBackground(Color.WHITE);
-        btnProfile.setPreferredSize(new Dimension(40, 40));
+        // Tombol Profil Rounded
+        JButton btnProfile = new JButton(new UserAvatarIcon()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 14, 14));
+                g2.setColor(COLOR_GOLD);
+                g2.setStroke(new BasicStroke(1.5f));
+                g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, getWidth() - 2, getHeight() - 2, 14, 14));
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btnProfile.setPreferredSize(new Dimension(42, 42));
         btnProfile.setFocusPainted(false);
-        btnProfile.setOpaque(true);
-        btnProfile.setBorder(new LineBorder(COLOR_GOLD, 1, true));
+        btnProfile.setContentAreaFilled(false);
+        btnProfile.setBorderPainted(false);
+        btnProfile.setOpaque(false);
         btnProfile.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnProfile.setToolTipText(getProfileTooltip());
         btnProfile.addActionListener(e -> showProfileDialog());
 
-        JButton btnToggleSidebar = new JButton("...");
-        btnToggleSidebar.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btnToggleSidebar.setBackground(COLOR_GOLD);
-        btnToggleSidebar.setForeground(Color.WHITE);
-        btnToggleSidebar.setPreferredSize(new Dimension(46, 40));
-        btnToggleSidebar.setFocusPainted(false);
-        btnToggleSidebar.setOpaque(true);
-        btnToggleSidebar.setBorderPainted(false);
-        btnToggleSidebar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        // Tombol Menu Sidebar (Padding dikecilkan supaya ikon ≡ tidak terpotong menjadi ...)
+        JButton btnToggleSidebar = UIHelper.createRoundedButton("≡",
+                COLOR_GOLD, UIHelper.COLOR_GOLD_HOVER, UIHelper.COLOR_GOLD_PRESS, Color.WHITE, 14, 20);
+        btnToggleSidebar.setBorder(new EmptyBorder(0, 0, 2, 0));
+        btnToggleSidebar.setPreferredSize(new Dimension(44, 42));
         btnToggleSidebar.setToolTipText("Buka / Tutup Menu Navigasi");
         btnToggleSidebar.addActionListener(e -> toggleSidebar());
 
@@ -179,34 +166,11 @@ public abstract class BaseDashboardFrame extends JFrame {
     }
 
     private JButton createSidebarButton(String text, Runnable action) {
-        JButton btn = new JButton("  •  " + text);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btn.setForeground(Color.WHITE);
-        btn.setBackground(COLOR_NAVY);
+        JButton btn = UIHelper.createRoundedButton("  •  " + text,
+                COLOR_NAVY, COLOR_SIDEBAR_HOVER, COLOR_NAVY.darker(), Color.WHITE, 12, 13);
         btn.setHorizontalAlignment(SwingConstants.LEFT);
-        btn.setMaximumSize(new Dimension(250, 46));
-        btn.setPreferredSize(new Dimension(250, 46));
-        btn.setBorder(new EmptyBorder(0, 18, 0, 15));
-        btn.setFocusPainted(false);
-        btn.setOpaque(true);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        btn.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                btn.setBackground(COLOR_SIDEBAR_HOVER);
-                btn.setForeground(COLOR_GOLD);
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                btn.setBackground(COLOR_NAVY);
-                btn.setForeground(Color.WHITE);
-            }
-        });
-
+        btn.setBorder(new EmptyBorder(12, 16, 12, 16));
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
         btn.addActionListener(e -> action.run());
         return btn;
     }
@@ -215,7 +179,7 @@ public abstract class BaseDashboardFrame extends JFrame {
         String[][] rows = getProfileRows();
 
         JDialog dialog = new JDialog(this, getProfileDialogTitle(), true);
-        dialog.setSize(420, 240 + rows.length * 30);
+        dialog.setSize(430, 255 + rows.length * 32);
         dialog.setLocationRelativeTo(this);
         dialog.setResizable(false);
 
@@ -223,36 +187,44 @@ public abstract class BaseDashboardFrame extends JFrame {
         root.setBackground(Color.WHITE);
         root.setBorder(new EmptyBorder(20, 24, 20, 24));
 
-        JLabel hdr = new JLabel("<html><center><b style='color:#c5a880;font-size:14px;'>" + getProfileHeader() + "</b><br>" +
-                "<span style='color:white;font-size:11px;'>" + getProfileSubHeader() + "</span></center></html>", SwingConstants.CENTER);
-        hdr.setOpaque(true);
-        hdr.setBackground(COLOR_NAVY);
-        hdr.setBorder(new EmptyBorder(14, 10, 14, 10));
+        JPanel hdrPanel = new JPanel(new GridLayout(2, 1, 0, 2)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(COLOR_NAVY);
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 16, 16));
+                g2.dispose();
+            }
+        };
+        hdrPanel.setOpaque(false);
+        hdrPanel.setBorder(new EmptyBorder(14, 14, 14, 14));
 
-        JPanel infoGrid = new JPanel(new GridLayout(rows.length, 2, 8, 10));
+        JLabel lblH1 = new JLabel(getProfileHeader(), SwingConstants.CENTER);
+        lblH1.setFont(new Font("Serif", Font.BOLD, 16));
+        lblH1.setForeground(COLOR_GOLD);
+
+        JLabel lblH2 = new JLabel(getProfileSubHeader(), SwingConstants.CENTER);
+        lblH2.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblH2.setForeground(Color.WHITE);
+
+        hdrPanel.add(lblH1);
+        hdrPanel.add(lblH2);
+
+        JPanel infoGrid = UIHelper.createRoundedCard(14, 16, 18);
         infoGrid.setBackground(new Color(248, 250, 252));
-        infoGrid.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(new Color(226, 232, 240), 1, true),
-                new EmptyBorder(16, 18, 16, 18)
-        ));
+        infoGrid.setLayout(new GridLayout(rows.length, 2, 8, 10));
         for (String[] row : rows) addProfilRow(infoGrid, row[0], row[1]);
 
-        JButton btnLogout = new JButton("Logout dari Akun");
-        btnLogout.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnLogout.setBackground(new Color(220, 38, 38));
-        btnLogout.setForeground(Color.WHITE);
-        btnLogout.setPreferredSize(new Dimension(0, 42));
-        btnLogout.setFocusPainted(false);
-        btnLogout.setOpaque(true);
-        btnLogout.setBorderPainted(false);
-        btnLogout.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        JButton btnLogout = UIHelper.dangerButton("Logout dari Akun");
+        btnLogout.setPreferredSize(new Dimension(0, 44));
         btnLogout.addActionListener(e -> {
             dialog.dispose();
             dispose();
             new LoginFrame().setVisible(true);
         });
 
-        root.add(hdr, BorderLayout.NORTH);
+        root.add(hdrPanel, BorderLayout.NORTH);
         root.add(infoGrid, BorderLayout.CENTER);
         root.add(btnLogout, BorderLayout.SOUTH);
 
@@ -273,7 +245,6 @@ public abstract class BaseDashboardFrame extends JFrame {
         grid.add(v);
     }
 
-    /** Helper untuk subclass: nilai null/kosong ditampilkan sebagai "-". */
     protected static String orDash(String s) {
         return (s == null || s.trim().isEmpty()) ? "-" : s;
     }

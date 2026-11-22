@@ -1,12 +1,13 @@
 package com.homestaysafe.gui;
 
+import com.homestaysafe.util.UIHelper;
 import com.homestaysafe.dao.UserDAO;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.geom.RoundRectangle2D;
 
 public class RegisterFrame extends JFrame {
     private JTextField txtNama;
@@ -19,7 +20,6 @@ public class RegisterFrame extends JFrame {
     private UserDAO userDAO;
 
     private final Color COLOR_BG = new Color(245, 247, 250);
-    private final Color COLOR_CARD = new Color(255, 255, 255);
     private final Color COLOR_NAVY = new Color(15, 23, 42);
     private final Color COLOR_GOLD = new Color(197, 168, 128);
     private final Color COLOR_TEXT_MUTED = new Color(100, 116, 139);
@@ -28,7 +28,7 @@ public class RegisterFrame extends JFrame {
         userDAO = new UserDAO();
 
         setTitle("HomestaySafe - Registrasi Akun Tamu");
-        setSize(480, 580);
+        setSize(490, 610);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(true);
@@ -37,12 +37,8 @@ public class RegisterFrame extends JFrame {
         outerPanel.setBackground(COLOR_BG);
         outerPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        JPanel cardPanel = new JPanel(new GridBagLayout());
-        cardPanel.setBackground(COLOR_CARD);
-        cardPanel.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(new Color(226, 232, 240), 1, true),
-                new EmptyBorder(25, 30, 25, 30)
-        ));
+        JPanel cardPanel = UIHelper.createRoundedCard(22, 28, 32);
+        cardPanel.setLayout(new GridBagLayout());
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 6, 5, 6);
@@ -55,7 +51,7 @@ public class RegisterFrame extends JFrame {
         cardPanel.add(lblHeaderTag, gbc);
 
         JLabel lblTitle = new JLabel("Registrasi Tamu Baru", SwingConstants.CENTER);
-        lblTitle.setFont(new Font("Serif", Font.BOLD, 22));
+        lblTitle.setFont(new Font("Serif", Font.BOLD, 23));
         lblTitle.setForeground(COLOR_NAVY);
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 2;
         gbc.insets = new Insets(0, 6, 15, 6);
@@ -100,46 +96,28 @@ public class RegisterFrame extends JFrame {
         cardPanel.add(lblPass, gbc);
 
         txtPassword = new JPasswordField();
-        txtPassword.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        txtPassword.setPreferredSize(new Dimension(250, 36));
+        txtPassword.setPreferredSize(new Dimension(250, 38));
         txtPassword.setEchoChar('•');
-        txtPassword.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(new Color(203, 213, 225), 1),
-                new EmptyBorder(5, 10, 5, 10)
-        ));
+        UIHelper.styleField(txtPassword);
         gbc.gridx = 0; gbc.gridy = 9; gbc.gridwidth = 1;
         gbc.weightx = 1.0;
         cardPanel.add(txtPassword, gbc);
 
-        btnTogglePass = new JToggleButton("👁");
-        btnTogglePass.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 13));
-        btnTogglePass.setPreferredSize(new Dimension(50, 36));
-        btnTogglePass.setFocusable(false);
-        btnTogglePass.setBackground(COLOR_BG);
-        btnTogglePass.setBorder(new LineBorder(new Color(203, 213, 225), 1));
-        btnTogglePass.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnTogglePass = createEyeToggleButton(38);
         btnTogglePass.addActionListener((ActionEvent e) -> {
             if (btnTogglePass.isSelected()) {
                 txtPassword.setEchoChar((char) 0);
-                btnTogglePass.setText("🙈");
             } else {
                 txtPassword.setEchoChar('•');
-                btnTogglePass.setText("👁");
             }
+            btnTogglePass.repaint();
         });
         gbc.gridx = 1; gbc.gridy = 9; gbc.gridwidth = 1;
         gbc.weightx = 0.0;
         cardPanel.add(btnTogglePass, gbc);
 
-        btnRegister = new JButton("BUAT AKUN TAMU");
-        btnRegister.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnRegister.setBackground(COLOR_GOLD);
-        btnRegister.setForeground(Color.WHITE);
-        btnRegister.setPreferredSize(new Dimension(300, 42));
-        btnRegister.setFocusPainted(false);
-        btnRegister.setOpaque(true);
-        btnRegister.setBorderPainted(false);
-        btnRegister.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnRegister = UIHelper.goldButton("BUAT AKUN TAMU");
+        btnRegister.setPreferredSize(new Dimension(300, 44));
         btnRegister.addActionListener(e -> processRegister());
 
         gbc.gridx = 0; gbc.gridy = 10; gbc.gridwidth = 2;
@@ -151,6 +129,7 @@ public class RegisterFrame extends JFrame {
         btnBackToLogin.setForeground(COLOR_TEXT_MUTED);
         btnBackToLogin.setContentAreaFilled(false);
         btnBackToLogin.setBorderPainted(false);
+        btnBackToLogin.setFocusPainted(false);
         btnBackToLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnBackToLogin.addActionListener(e -> {
             dispose();
@@ -165,14 +144,47 @@ public class RegisterFrame extends JFrame {
         add(outerPanel);
     }
 
+    private JToggleButton createEyeToggleButton(int height) {
+        JToggleButton btn = new JToggleButton() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(isSelected() ? UIHelper.COLOR_SOFT_HOVER : UIHelper.COLOR_SOFT);
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 10, 10));
+                g2.setColor(UIHelper.COLOR_BORDER);
+                g2.draw(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 10, 10));
+
+                int cx = getWidth() / 2;
+                int cy = getHeight() / 2;
+                g2.setColor(COLOR_NAVY);
+                g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g2.drawArc(cx - 10, cy - 6, 20, 12, 0, 180);
+                g2.drawArc(cx - 10, cy - 6, 20, 12, 180, 180);
+                g2.fillOval(cx - 3, cy - 3, 6, 6);
+
+                if (isSelected()) {
+                    g2.setColor(UIHelper.COLOR_DANGER);
+                    g2.drawLine(cx - 9, cy + 7, cx + 9, cy - 7);
+                }
+                g2.dispose();
+            }
+        };
+        btn.setPreferredSize(new Dimension(48, height));
+        btn.setMargin(new Insets(0, 0, 0, 0));
+        btn.setFocusable(false);
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setOpaque(false);
+        btn.setToolTipText("Tampilkan / Sembunyikan Password");
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return btn;
+    }
+
     private JTextField createStyledTextField() {
         JTextField tf = new JTextField();
-        tf.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tf.setPreferredSize(new Dimension(300, 36));
-        tf.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(new Color(203, 213, 225), 1),
-                new EmptyBorder(5, 10, 5, 10)
-        ));
+        tf.setPreferredSize(new Dimension(300, 38));
+        UIHelper.styleField(tf);
         return tf;
     }
 

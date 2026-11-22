@@ -1,5 +1,6 @@
 package com.homestaysafe.gui.panel.resepsionis;
 
+import com.homestaysafe.util.UIHelper;
 import com.homestaysafe.dao.KamarDAO;
 import com.homestaysafe.model.Kamar;
 import com.homestaysafe.dao.ResepsionisDAO;
@@ -65,9 +66,8 @@ public class OfflineBookingPanel extends JPanel {
         KamarDAO kamarDAO = new KamarDAO();
         List<Kamar> listKamar = kamarDAO.getAllKamar();
         JComboBox<String> cbKamar = new JComboBox<>();
-        cbKamar.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         cbKamar.setPreferredSize(new Dimension(0, 38));
-        cbKamar.setBackground(Color.WHITE);
+        UIHelper.styleField(cbKamar);
 
         for (Kamar k : listKamar) {
             if (k.getStatusKamar().equalsIgnoreCase("Tersedia")) {
@@ -78,16 +78,16 @@ public class OfflineBookingPanel extends JPanel {
         SpinnerDateModel modelIn = new SpinnerDateModel(new Date(), null, null, Calendar.DAY_OF_MONTH);
         JSpinner spinIn = new JSpinner(modelIn);
         spinIn.setEditor(new JSpinner.DateEditor(spinIn, "yyyy-MM-dd"));
-        spinIn.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         spinIn.setPreferredSize(new Dimension(0, 38));
+        UIHelper.styleField(spinIn);
 
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DAY_OF_MONTH, 1);
         SpinnerDateModel modelOut = new SpinnerDateModel(cal.getTime(), null, null, Calendar.DAY_OF_MONTH);
         JSpinner spinOut = new JSpinner(modelOut);
         spinOut.setEditor(new JSpinner.DateEditor(spinOut, "yyyy-MM-dd"));
-        spinOut.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         spinOut.setPreferredSize(new Dimension(0, 38));
+        UIHelper.styleField(spinOut);
 
         addFormField(formBody, gbc, 0, "Nama Lengkap Tamu", txtNama);
         addFormField(formBody, gbc, 2, "No. Identitas (NIK / KTP - 16 Digit)", txtNIK);
@@ -113,12 +113,9 @@ public class OfflineBookingPanel extends JPanel {
         summaryBody.setBackground(Color.WHITE);
         summaryBody.setBorder(new EmptyBorder(22, 24, 22, 24));
 
-        JPanel detailGrid = new JPanel(new GridLayout(5, 2, 10, 12));
+        JPanel detailGrid = UIHelper.createRoundedCard(14, 16, 18);
         detailGrid.setBackground(new Color(248, 250, 252));
-        detailGrid.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(COLOR_BORDER, 1, true),
-                new EmptyBorder(16, 18, 16, 18)
-        ));
+        detailGrid.setLayout(new GridLayout(5, 2, 10, 12));
 
         addSummaryRow(detailGrid, "Kamar Dipilih", lblRingkasanKamar, false);
         addSummaryRow(detailGrid, "Tarif per Malam", lblRingkasanHargaMalam, false);
@@ -137,15 +134,8 @@ public class OfflineBookingPanel extends JPanel {
                 "Sistem otomatis membuatkan akun akses Portal Tamu (<i>katapertama + 123</i>) agar tamu dapat memesan layanan makanan (F&B) langsung dari kamar.</body></html>");
         infoBox.add(lblInfo, BorderLayout.CENTER);
 
-        JButton btnSimpan = new JButton("Proses & Simpan Pesanan Walk-In");
-        btnSimpan.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnSimpan.setBackground(COLOR_GOLD);
-        btnSimpan.setForeground(Color.WHITE);
+        JButton btnSimpan = UIHelper.goldButton("Proses & Simpan Pesanan Walk-In");
         btnSimpan.setPreferredSize(new Dimension(0, 44));
-        btnSimpan.setFocusPainted(false);
-        btnSimpan.setOpaque(true);
-        btnSimpan.setBorderPainted(false);
-        btnSimpan.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         JPanel centerSummary = new JPanel(new BorderLayout(0, 14));
         centerSummary.setOpaque(false);
@@ -260,12 +250,9 @@ public class OfflineBookingPanel extends JPanel {
         hdr.setBackground(COLOR_NAVY);
         hdr.setBorder(new EmptyBorder(14, 10, 14, 10));
 
-        JPanel credBox = new JPanel(new GridLayout(3, 2, 8, 10));
+        JPanel credBox = UIHelper.createRoundedCard(14, 16, 18);
         credBox.setBackground(new Color(248, 250, 252));
-        credBox.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(COLOR_BORDER, 1, true),
-                new EmptyBorder(16, 18, 16, 18)
-        ));
+        credBox.setLayout(new GridLayout(3, 2, 8, 10));
 
         JLabel lUser = new JLabel("Username Login:");
         lUser.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -288,14 +275,8 @@ public class OfflineBookingPanel extends JPanel {
         credBox.add(lPass); credBox.add(vPass);
         credBox.add(lInfo); credBox.add(vInfo);
 
-        JButton btnOk = new JButton("Selesai & Serahkan Kunci");
-        btnOk.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnOk.setBackground(COLOR_GOLD);
-        btnOk.setForeground(Color.WHITE);
-        btnOk.setPreferredSize(new Dimension(0, 40));
-        btnOk.setFocusPainted(false);
-        btnOk.setOpaque(true);
-        btnOk.setBorderPainted(false);
+        JButton btnOk = UIHelper.primaryButton("Selesai & Serahkan Kunci");
+        btnOk.setPreferredSize(new Dimension(0, 42));
         btnOk.addActionListener(e -> dialog.dispose());
 
         root.add(hdr, BorderLayout.NORTH);
@@ -308,12 +289,8 @@ public class OfflineBookingPanel extends JPanel {
 
     private JTextField createStyledField() {
         JTextField tf = new JTextField();
-        tf.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tf.setPreferredSize(new Dimension(0, 38));
-        tf.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(new Color(203, 213, 225), 1, true),
-                new EmptyBorder(4, 10, 4, 10)
-        ));
+        UIHelper.styleField(tf);
         return tf;
     }
 
