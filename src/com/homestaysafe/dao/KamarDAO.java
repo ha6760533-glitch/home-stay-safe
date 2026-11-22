@@ -3,15 +3,30 @@ package com.homestaysafe.dao;
 import com.homestaysafe.exception.JadwalBentrokException;
 import com.homestaysafe.model.Kamar;
 import com.homestaysafe.util.DatabaseConnection;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class KamarDAO {
+
+    public static class TipeKamarSummary {
+        private final String tipeKamar;
+        private final double hargaPerMalam;
+        private final int totalUnit;
+        private final int unitTersedia;
+
+        public TipeKamarSummary(String tipeKamar, double hargaPerMalam, int totalUnit, int unitTersedia) {
+            this.tipeKamar = tipeKamar;
+            this.hargaPerMalam = hargaPerMalam;
+            this.totalUnit = totalUnit;
+            this.unitTersedia = unitTersedia;
+        }
+
+        public String getTipeKamar() { return tipeKamar; }
+        public double getHargaPerMalam() { return hargaPerMalam; }
+        public int getTotalUnit() { return totalUnit; }
+        public int getUnitTersedia() { return unitTersedia; }
+    }
 
     public List<Kamar> getAllKamar() {
         List<Kamar> listKamar = new ArrayList<>();
@@ -60,8 +75,119 @@ public class KamarDAO {
         return listKamar;
     }
 
-    public boolean isKamarTersediaUntukTanggal(int idKamar, String checkIn, String checkOut) {
+    /** Ringkasan per Tipe Kamar (Standard, Deluxe, Suite) untuk Booking Online Tamu */
+    public List<TipeKamarSummary> getRingkasanTipeKamar() {
+        getAllKamar(); // sinkronisasi status kamar terbaru terlebih dahulu
+        List<TipeKamarSummary> list = new ArrayList<>();
 
+        String sql = "SELECT tipe_kamar, MAX(harga_per_malam) AS harga, " +
+                "COUNT(*) AS total_unit, " +
+                "COUNT(*) FILTER (WHERE TRIM(status_kamar) ILIKE 'Tersedia') AS unit_tersedia " +
+                "FROM kamar " +
+                "GROUP BY tipe_kamar " +
+                "ORDER BY harga ASC";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                list.add(new TipeKamarSummary(
+                        rs.getString("tipe_kamar"),
+                        rs.getDouble("harga"),
+                        rs.getInt("total_unit"),
+                        rs.getInt("unit_tersedia")
+                ));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /** Mengecek apakah masih ada minimal 1 kamar dengan tipe tersebut yang bebas bentrok pada tanggal tertentu */
+    public boolean isTipeKamarTersediaUntukTanggal(String tipeKamar, String checkIn, String checkOut) {
+        String sqlTotalAktif = "SELECT COUNT(*) FROM kamar " +
+                "WHERE TRIM(tipe_kamar) ILIKE TRIM(?) " +
+                "AND COALESCE(status_kamar, '') NOT ILIKE 'Pemeliharaan'";
+
+        String sqlTerpakaiTanggal = "SELECT COUNT(*) FROM reservasi r " +
+                "WHERE TRIM(r.tipe_kamar) ILIKE TRIM(?) " +
+                "AND COALESCE(r.status_reservasi, '') NOT ILIKE '%Selesai%' " +
+                "AND COALESCE(r.status_reservasi, '') NOT ILIKE '%Ditolak%' " +
+                "AND COALESCE(r.status_reservasi, '') NOT ILIKE '%Dibatalkan%' " +
+                "AND r.tgl_checkin < ?::date " +
+                "AND r.tgl_checkout_rencana > ?::date";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmtTotal = conn.prepareStatement(sqlTotalAktif);
+             PreparedStatement stmtUsed = conn.prepareStatement(sqlTerpakaiTanggal)) {
+
+            stmtTotal.setString(1, tipeKamar);
+            ResultSet rsTotal = stmtTotal.executeQuery();
+            int totalUnit = rsTotal.next() ? rsTotal.getInt(1) : 0;
+            if (totalUnit <= 0) return false;
+
+            stmtUsed.setString(1, tipeKamar);
+            stmtUsed.setString(2, checkOut);
+            stmtUsed.setString(3, checkIn);
+            ResultSet rsUsed = stmtUsed.executeQuery();
+            int usedUnit = rsUsed.next() ? rsUsed.getInt(1) : 0;
+
+            return (totalUnit - usedUnit) > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /** Menyimpan booking online berdasarkan Tipe Kamar (no_kamar = NULL, dipilih Resepsionis saat verifikasi) */
+    public int simpanReservasiByTipe(String username, String tipeKamar, String checkIn, String checkOut, double totalHarga)
+            throws JadwalBentrokException, SQLException {
+
+        if (!isTipeKamarTersediaUntukTanggal(tipeKamar, checkIn, checkOut)) {
+            throw new JadwalBentrokException("Tipe " + tipeKamar, checkIn, checkOut);
+        }
+
+        String sqlUser = "SELECT id_user FROM users WHERE LOWER(username) = LOWER(?) OR LOWER(nama) = LOWER(?)";
+        String sqlReservasi = "INSERT INTO reservasi (id_user, no_kamar, tipe_kamar, tgl_checkin, tgl_checkout_rencana, total_biaya, denda, status_reservasi) " +
+                "VALUES (?, NULL, ?, ?, ?, ?, 0, 'Pending') RETURNING id_reservasi";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmtUser = conn.prepareStatement(sqlUser)) {
+
+            stmtUser.setString(1, username.trim());
+            stmtUser.setString(2, username.trim());
+            ResultSet rsUser = stmtUser.executeQuery();
+
+            if (!rsUser.next()) {
+                throw new SQLException("Username '" + username + "' tidak ditemukan di tabel users.");
+            }
+            int idUser = rsUser.getInt("id_user");
+
+            conn.setAutoCommit(false);
+            try (PreparedStatement stmtRes = conn.prepareStatement(sqlReservasi)) {
+                stmtRes.setInt(1, idUser);
+                stmtRes.setString(2, tipeKamar);
+                stmtRes.setDate(3, java.sql.Date.valueOf(checkIn));
+                stmtRes.setDate(4, java.sql.Date.valueOf(checkOut));
+                stmtRes.setDouble(5, totalHarga);
+
+                ResultSet rs = stmtRes.executeQuery();
+                if (rs.next()) {
+                    int idReservasi = rs.getInt(1);
+                    conn.commit();
+                    return idReservasi;
+                }
+                conn.rollback();
+                throw new SQLException("Gagal mendapatkan ID reservasi.");
+            } catch (SQLException ex) {
+                conn.rollback();
+                throw ex;
+            }
+        }
+    }
+
+    public boolean isKamarTersediaUntukTanggal(int idKamar, String checkIn, String checkOut) {
         String sqlStatus = "SELECT status_kamar, no_kamar FROM kamar WHERE id_kamar = ?";
         String noKamar = null;
 
@@ -108,13 +234,6 @@ public class KamarDAO {
         return false;
     }
 
-    /**
-     * Menyimpan reservasi baru berstatus Pending.
-     *
-     * @return id reservasi yang baru dibuat
-     * @throws JadwalBentrokException jika kamar sudah dipesan pada rentang tanggal tersebut
-     * @throws SQLException           jika user/kamar tidak ditemukan atau penyimpanan gagal
-     */
     public int simpanReservasi(String username, int idKamar, String checkIn, String checkOut, double totalHarga)
             throws JadwalBentrokException, SQLException {
 
@@ -174,7 +293,6 @@ public class KamarDAO {
         }
     }
 
-    /** Nomor kamar untuk pesan error; fallback ke "ID n" bila tidak ditemukan. */
     public String getNoKamarById(int idKamar) {
         String sql = "SELECT no_kamar FROM kamar WHERE id_kamar = ?";
         try (Connection conn = DatabaseConnection.getConnection();

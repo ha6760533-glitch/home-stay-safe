@@ -1,10 +1,10 @@
 package com.homestaysafe.gui.panel.resepsionis;
 
+import com.homestaysafe.util.UIHelper;
 import com.homestaysafe.dao.KamarDAO;
 import com.homestaysafe.model.Kamar;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.util.List;
 
@@ -12,7 +12,6 @@ public class CekStokKamarPanel extends JPanel {
     private final Color COLOR_NAVY = new Color(15, 23, 42);
     private final Color COLOR_BG = new Color(245, 247, 250);
     private final Color COLOR_GOLD = new Color(197, 168, 128);
-    private final Color COLOR_BORDER = new Color(226, 232, 240);
     private final JPanel gridPanel;
     private List<Kamar> listKamar;
     private final JComboBox<String> cbTipe;
@@ -34,11 +33,24 @@ public class CekStokKamarPanel extends JPanel {
         filterPanel.setOpaque(false);
 
         cbTipe = new JComboBox<>(new String[]{"Semua Tipe", "Standard", "Deluxe", "Suite"});
-        cbStatus = new JComboBox<>(new String[]{"Semua Status", "Tersedia", "Terisi", "Pemeliharaan"});
+        cbTipe.setPreferredSize(new Dimension(145, 36));
+        UIHelper.styleField(cbTipe);
 
-        filterPanel.add(new JLabel("Tipe:"));
+        cbStatus = new JComboBox<>(new String[]{"Semua Status", "Tersedia", "Terisi", "Pemeliharaan"});
+        cbStatus.setPreferredSize(new Dimension(155, 36));
+        UIHelper.styleField(cbStatus);
+
+        JLabel lblTipeFilter = new JLabel("Tipe:");
+        lblTipeFilter.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblTipeFilter.setForeground(COLOR_NAVY);
+
+        JLabel lblStatusFilter = new JLabel("Status:");
+        lblStatusFilter.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblStatusFilter.setForeground(COLOR_NAVY);
+
+        filterPanel.add(lblTipeFilter);
         filterPanel.add(cbTipe);
-        filterPanel.add(new JLabel("Status:"));
+        filterPanel.add(lblStatusFilter);
         filterPanel.add(cbStatus);
 
         topBar.add(lblTitle, BorderLayout.WEST);
@@ -62,6 +74,7 @@ public class CekStokKamarPanel extends JPanel {
 
         JScrollPane scrollPane = new JScrollPane(mainContainer);
         scrollPane.setBorder(null);
+        scrollPane.getViewport().setBackground(COLOR_BG);
 
         add(topBar, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
@@ -82,12 +95,8 @@ public class CekStokKamarPanel extends JPanel {
 
             if (!matchTipe || !matchStatus) continue;
 
-            JPanel card = new JPanel(new BorderLayout(10, 10));
-            card.setBackground(Color.WHITE);
-            card.setBorder(BorderFactory.createCompoundBorder(
-                    new LineBorder(COLOR_BORDER, 1, true),
-                    new EmptyBorder(15, 15, 15, 15)
-            ));
+            JPanel card = UIHelper.createRoundedCard(18, 16, 18);
+            card.setLayout(new BorderLayout(10, 10));
 
             JPanel topCard = new JPanel(new BorderLayout());
             topCard.setOpaque(false);
@@ -116,7 +125,7 @@ public class CekStokKamarPanel extends JPanel {
             topCard.add(lblTipe, BorderLayout.WEST);
             topCard.add(lblStatus, BorderLayout.EAST);
 
-            String fasilitas = k.getFasilitas(); // Polymorphism: tiap subclass Kamar punya fasilitas sendiri
+            String fasilitas = k.getFasilitas();
 
             JPanel midCard = new JPanel(new GridLayout(3, 1, 4, 4));
             midCard.setOpaque(false);
@@ -140,15 +149,13 @@ public class CekStokKamarPanel extends JPanel {
             bottomCard.setOpaque(false);
 
             if (isMaintenance) {
-                JButton btnSelesaiBersih = new JButton("✓ Selesai Dibersihkan → Tersedia");
-                btnSelesaiBersih.setFont(new Font("Segoe UI", Font.BOLD, 11));
-                btnSelesaiBersih.setBackground(new Color(16, 185, 129));
-                btnSelesaiBersih.setForeground(Color.WHITE);
-                btnSelesaiBersih.setFocusPainted(false);
-                btnSelesaiBersih.setBorderPainted(false);
-                btnSelesaiBersih.setOpaque(true);
-                btnSelesaiBersih.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                btnSelesaiBersih.setPreferredSize(new Dimension(210, 32));
+                JButton btnSelesaiBersih = UIHelper.createRoundedButton(
+                        "✓ Selesai Dibersihkan → Tersedia",
+                        UIHelper.COLOR_SUCCESS, UIHelper.COLOR_SUCCESS_HOVER, UIHelper.COLOR_SUCCESS.darker(),
+                        Color.WHITE, 10, 11
+                );
+                btnSelesaiBersih.setBorder(new EmptyBorder(6, 12, 6, 12));
+                btnSelesaiBersih.setPreferredSize(new Dimension(225, 34));
 
                 btnSelesaiBersih.addActionListener(e -> {
                     int confirm = JOptionPane.showConfirmDialog(

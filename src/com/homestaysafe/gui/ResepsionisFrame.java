@@ -1,9 +1,9 @@
 package com.homestaysafe.gui;
 
+import com.homestaysafe.util.UIHelper;
 import com.homestaysafe.gui.panel.resepsionis.*;
 import com.homestaysafe.model.User;
 
-/** Dashboard untuk role Resepsionis. Kerangka UI diwarisi dari {@link BaseDashboardFrame}. */
 public class ResepsionisFrame extends BaseDashboardFrame {
 
     public ResepsionisFrame(User user) {

@@ -1,5 +1,6 @@
 package com.homestaysafe.gui.panel.manajer;
 
+import com.homestaysafe.util.UIHelper;
 import com.homestaysafe.dao.MenuDAO;
 
 import javax.swing.*;
@@ -10,10 +11,6 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
-/**
- * Panel Kelola Menu F&B untuk role Manager.
- * CRUD lengkap: Create, Read, Update, Delete.
- */
 public class KelolaMenuPanel extends JPanel {
 
     private final Color COLOR_NAVY   = new Color(15, 23, 42);
@@ -31,16 +28,15 @@ public class KelolaMenuPanel extends JPanel {
     private final JTextField txtNama  = new JTextField();
     private final JTextField txtHarga = new JTextField();
     private final JLabel lblMode = new JLabel("Tambah menu baru");
-    private final JButton btnSimpan = new JButton("Simpan");
+    private final JButton btnSimpan = UIHelper.goldButton("Simpan");
 
-    private Integer selectedId = null; // null = tambah, ada isi = edit
+    private Integer selectedId = null;
 
     public KelolaMenuPanel() {
         setLayout(new BorderLayout(0, 18));
         setBackground(COLOR_BG);
         setBorder(new EmptyBorder(25, 28, 25, 28));
 
-        // ========== HEADER ==========
         JPanel header = new JPanel();
         header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
         header.setOpaque(false);
@@ -59,72 +55,45 @@ public class KelolaMenuPanel extends JPanel {
         header.add(lblTitle);
         header.add(lblSub);
 
-        // ========== FORM CARD ==========
-        JPanel formCard = new JPanel(new BorderLayout(16, 0));
-        formCard.setBackground(Color.WHITE);
-        formCard.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(COLOR_BORDER, 1, true),
-                new EmptyBorder(16, 20, 16, 20)
-        ));
-
-        // Kiri: mode label + field
-        JPanel formLeft = new JPanel();
-        formLeft.setLayout(new BoxLayout(formLeft, BoxLayout.Y_AXIS));
-        formLeft.setOpaque(false);
+        JPanel formCard = UIHelper.createRoundedCard(16, 16, 20);
+        formCard.setLayout(new BoxLayout(formCard, BoxLayout.Y_AXIS));
 
         lblMode.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lblMode.setForeground(COLOR_GOLD);
         lblMode.setAlignmentX(Component.LEFT_ALIGNMENT);
         lblMode.setBorder(new EmptyBorder(0, 0, 10, 0));
 
-        JPanel fieldRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
+        JPanel fieldRow = new JPanel(new BorderLayout(12, 0));
         fieldRow.setOpaque(false);
         fieldRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+        JPanel inputsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
+        inputsPanel.setOpaque(false);
+
         JLabel lblNama = makeLabel("Nama Menu");
-        txtNama.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         txtNama.setPreferredSize(new Dimension(260, 36));
-        txtNama.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(COLOR_BORDER, 1, true),
-                new EmptyBorder(6, 10, 6, 10)
-        ));
+        UIHelper.styleField(txtNama);
 
         JLabel lblHarga = makeLabel("Harga (Rp)");
-        txtHarga.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         txtHarga.setPreferredSize(new Dimension(150, 36));
-        txtHarga.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(COLOR_BORDER, 1, true),
-                new EmptyBorder(6, 10, 6, 10)
-        ));
+        UIHelper.styleField(txtHarga);
 
-        fieldRow.add(lblNama);
-        fieldRow.add(txtNama);
-        fieldRow.add(Box.createHorizontalStrut(8));
-        fieldRow.add(lblHarga);
-        fieldRow.add(txtHarga);
-
-        formLeft.add(lblMode);
-        formLeft.add(fieldRow);
-
-        // Kanan: tombol Simpan saja (sejajar dengan field)
-        JPanel formRight = new JPanel(new GridBagLayout());
-        formRight.setOpaque(false);
+        inputsPanel.add(lblNama);
+        inputsPanel.add(txtNama);
+        inputsPanel.add(Box.createHorizontalStrut(8));
+        inputsPanel.add(lblHarga);
+        inputsPanel.add(txtHarga);
 
         btnSimpan.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnSimpan.setBackground(COLOR_GOLD);
-        btnSimpan.setForeground(Color.WHITE);
+        btnSimpan.setBorder(new EmptyBorder(8, 22, 8, 22));
         btnSimpan.setPreferredSize(new Dimension(120, 36));
-        btnSimpan.setFocusPainted(false);
-        btnSimpan.setOpaque(true);
-        btnSimpan.setBorderPainted(false);
-        btnSimpan.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        formRight.add(btnSimpan);
+        fieldRow.add(inputsPanel, BorderLayout.CENTER);
+        fieldRow.add(btnSimpan, BorderLayout.EAST);
 
-        formCard.add(formLeft, BorderLayout.CENTER);
-        formCard.add(formRight, BorderLayout.EAST);
+        formCard.add(lblMode);
+        formCard.add(fieldRow);
 
-        // ========== TABEL ==========
         String[] cols = {"ID", "Nama Menu", "Harga", "Aksi"};
         model = new DefaultTableModel(cols, 0) {
             @Override
@@ -184,7 +153,6 @@ public class KelolaMenuPanel extends JPanel {
         scroll.setBorder(new LineBorder(COLOR_BORDER, 1, true));
         scroll.getViewport().setBackground(Color.WHITE);
 
-        // ========== SUSUN ==========
         JPanel topSection = new JPanel(new BorderLayout(0, 14));
         topSection.setOpaque(false);
         topSection.add(header, BorderLayout.NORTH);
@@ -193,9 +161,8 @@ public class KelolaMenuPanel extends JPanel {
         add(topSection, BorderLayout.NORTH);
         add(scroll, BorderLayout.CENTER);
 
-        // ========== EVENT ==========
         btnSimpan.addActionListener(e -> simpanData());
-        // Double-click baris = edit
+
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -208,8 +175,6 @@ public class KelolaMenuPanel extends JPanel {
 
         loadData();
     }
-
-    // ---------- LOGIC ----------
 
     private void loadData() {
         model.setRowCount(0);
@@ -314,8 +279,6 @@ public class KelolaMenuPanel extends JPanel {
         table.clearSelection();
     }
 
-    // ---------- HELPER ----------
-
     private JLabel makeLabel(String text) {
         JLabel lbl = new JLabel(text);
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -323,28 +286,23 @@ public class KelolaMenuPanel extends JPanel {
         return lbl;
     }
 
-    // ---------- BUTTON RENDERER & EDITOR ----------
-
     class ButtonRenderer extends JPanel implements javax.swing.table.TableCellRenderer {
-        private final JButton btnEdit  = new JButton("Edit");
-        private final JButton btnHapus = new JButton("Hapus");
+        private final JButton btnEdit = UIHelper.createRoundedButton(
+                "Edit", new Color(37, 99, 235), new Color(29, 78, 216), new Color(30, 64, 175), Color.WHITE, 8, 11);
+        private final JButton btnHapus = UIHelper.createRoundedButton(
+                "Hapus", COLOR_RED, UIHelper.COLOR_DANGER_HOVER, COLOR_RED.darker(), Color.WHITE, 8, 11);
 
         public ButtonRenderer() {
-            setLayout(new FlowLayout(FlowLayout.CENTER, 6, 6));
+            setLayout(new FlowLayout(FlowLayout.CENTER, 6, 7));
             setOpaque(true);
-            styleBtn(btnEdit, new Color(37, 99, 235));
-            styleBtn(btnHapus, COLOR_RED);
+            styleBtn(btnEdit);
+            styleBtn(btnHapus);
             add(btnEdit);
             add(btnHapus);
         }
 
-        private void styleBtn(JButton b, Color bg) {
-            b.setFont(new Font("Segoe UI", Font.BOLD, 11));
-            b.setBackground(bg);
-            b.setForeground(Color.WHITE);
-            b.setFocusPainted(false);
-            b.setOpaque(true);
-            b.setBorderPainted(false);
+        private void styleBtn(JButton b) {
+            b.setBorder(new EmptyBorder(4, 10, 4, 10));
             b.setPreferredSize(new Dimension(72, 28));
         }
 
@@ -356,16 +314,18 @@ public class KelolaMenuPanel extends JPanel {
     }
 
     class ButtonEditor extends DefaultCellEditor {
-        private final JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 6));
-        private final JButton btnEdit  = new JButton("Edit");
-        private final JButton btnHapus = new JButton("Hapus");
+        private final JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 7));
+        private final JButton btnEdit = UIHelper.createRoundedButton(
+                "Edit", new Color(37, 99, 235), new Color(29, 78, 216), new Color(30, 64, 175), Color.WHITE, 8, 11);
+        private final JButton btnHapus = UIHelper.createRoundedButton(
+                "Hapus", COLOR_RED, UIHelper.COLOR_DANGER_HOVER, COLOR_RED.darker(), Color.WHITE, 8, 11);
         private int currentRow = -1;
 
         public ButtonEditor(JCheckBox checkBox) {
             super(checkBox);
             panel.setOpaque(true);
-            styleBtn(btnEdit, new Color(37, 99, 235));
-            styleBtn(btnHapus, COLOR_RED);
+            styleBtn(btnEdit);
+            styleBtn(btnHapus);
 
             btnEdit.addActionListener(e -> {
                 fireEditingStopped();
@@ -380,13 +340,8 @@ public class KelolaMenuPanel extends JPanel {
             panel.add(btnHapus);
         }
 
-        private void styleBtn(JButton b, Color bg) {
-            b.setFont(new Font("Segoe UI", Font.BOLD, 11));
-            b.setBackground(bg);
-            b.setForeground(Color.WHITE);
-            b.setFocusPainted(false);
-            b.setOpaque(true);
-            b.setBorderPainted(false);
+        private void styleBtn(JButton b) {
+            b.setBorder(new EmptyBorder(4, 10, 4, 10));
             b.setPreferredSize(new Dimension(72, 28));
         }
 

@@ -109,11 +109,6 @@ public class MenuDAO {
     }
 
     // ===================== DELETE =====================
-    /**
-     * Hapus menu dari database.
-     * Karena FK pesanan_makanan.id_menu ON DELETE CASCADE,
-     * pesanan terkait juga ikut terhapus.
-     */
     public boolean hapusMenu(int idMenu) {
         String sql = "DELETE FROM menu WHERE id_menu = ?";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -127,10 +122,6 @@ public class MenuDAO {
         }
     }
 
-    /**
-     * Cek apakah menu sudah pernah dipesan (ada di tabel pesanan_makanan).
-     * Dipakai untuk memberi peringatan sebelum hapus.
-     */
     public int hitungPesananTerkait(int idMenu) {
         String sql = "SELECT COUNT(*) AS total FROM pesanan_makanan WHERE id_menu = ?";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -147,12 +138,12 @@ public class MenuDAO {
         return 0;
     }
 
-    // ===================== METHOD LAMA (pesanan F&B) =====================
+    // ===================== VALIDASI & SIMPAN PESANAN F&B (KHUSUS STATUS CHECK-IN) =====================
     public boolean hasActiveReservation(String username) {
         String sql = "SELECT r.id_reservasi FROM reservasi r " +
                 "JOIN users u ON r.id_user = u.id_user " +
                 "WHERE LOWER(u.username) = LOWER(?) " +
-                "AND LOWER(r.status_reservasi) IN ('diterima', 'check-in', 'lunas (check-in)', 'disetujui', 'pending check-in')";
+                "AND LOWER(TRIM(r.status_reservasi)) = 'check-in'";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -170,7 +161,7 @@ public class MenuDAO {
         String sqlReservasi = "SELECT r.id_reservasi FROM reservasi r " +
                 "JOIN users u ON r.id_user = u.id_user " +
                 "WHERE LOWER(u.username) = LOWER(?) " +
-                "AND LOWER(r.status_reservasi) IN ('diterima', 'check-in', 'lunas (check-in)', 'disetujui', 'pending check-in') " +
+                "AND LOWER(TRIM(r.status_reservasi)) = 'check-in' " +
                 "ORDER BY r.id_reservasi DESC LIMIT 1";
         String sqlInsert = "INSERT INTO pesanan_makanan (id_reservasi, id_menu, jumlah, subtotal, status_pesanan) VALUES (?, ?, ?, ?, 'Terkirim ke Dapur')";
 
@@ -191,7 +182,7 @@ public class MenuDAO {
                     return rows > 0 ? "OK" : "Gagal menyimpan pesanan ke tabel pesanan_makanan.";
                 }
             } else {
-                return "Tidak ditemukan ID reservasi aktif untuk user '" + username + "'.";
+                return "Pemesanan makanan hanya tersedia setelah Anda melakukan Check-In di Resepsionis.";
             }
         } catch (Exception e) {
             e.printStackTrace();

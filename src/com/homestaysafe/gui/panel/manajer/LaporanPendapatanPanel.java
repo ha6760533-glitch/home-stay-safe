@@ -1,5 +1,6 @@
 package com.homestaysafe.gui.panel.manajer;
 
+import com.homestaysafe.util.UIHelper;
 import com.homestaysafe.dao.ManajerDAO;
 
 import javax.swing.*;
@@ -48,18 +49,11 @@ public class LaporanPendapatanPanel extends JPanel {
         JComboBox<String> cbPeriode = new JComboBox<>(new String[]{"Harian", "Bulanan", "Tahunan"});
         cbPeriode.setSelectedItem("Bulanan");
         cbPeriode.setPreferredSize(new Dimension(160, 36));
-        cbPeriode.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        cbPeriode.setBackground(Color.WHITE);
+        UIHelper.styleField(cbPeriode);
 
-        JButton btnTerapkan = new JButton("Hitung Laporan");
-        btnTerapkan.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnTerapkan.setBackground(COLOR_GOLD);
-        btnTerapkan.setForeground(Color.WHITE);
+        JButton btnTerapkan = UIHelper.createRoundedButton("Hitung Laporan", COLOR_GOLD, UIHelper.COLOR_GOLD_HOVER, Color.WHITE, 12);
+        btnTerapkan.setBorder(new EmptyBorder(8, 16, 8, 16));
         btnTerapkan.setPreferredSize(new Dimension(145, 36));
-        btnTerapkan.setFocusPainted(false);
-        btnTerapkan.setOpaque(true);
-        btnTerapkan.setBorderPainted(false);
-        btnTerapkan.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         filterPanel.add(lblPeriode);
         filterPanel.add(cbPeriode);
@@ -77,12 +71,8 @@ public class LaporanPendapatanPanel extends JPanel {
         JPanel centerSplit = new JPanel(new GridLayout(1, 2, 16, 0));
         centerSplit.setOpaque(false);
 
-        JPanel chartContainer = new JPanel(new BorderLayout(0, 10));
-        chartContainer.setBackground(Color.WHITE);
-        chartContainer.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(COLOR_BORDER, 1, true),
-                new EmptyBorder(16, 16, 16, 16)
-        ));
+        JPanel chartContainer = UIHelper.createRoundedCard(16, 16, 16);
+        chartContainer.setLayout(new BorderLayout(0, 10));
         JLabel lblChartHeader = new JLabel("Visualisasi Grafik Pendapatan", SwingConstants.CENTER);
         lblChartHeader.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lblChartHeader.setForeground(COLOR_NAVY);
@@ -150,12 +140,8 @@ public class LaporanPendapatanPanel extends JPanel {
     }
 
     private JPanel createSummaryCard(String title, JLabel valueLabel, Color accentColor) {
-        JPanel card = new JPanel(new GridLayout(2, 1, 2, 6));
-        card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(COLOR_BORDER, 1, true),
-                new EmptyBorder(14, 18, 14, 18)
-        ));
+        JPanel card = UIHelper.createRoundedCard(14, 14, 18);
+        card.setLayout(new GridLayout(2, 1, 2, 6));
 
         JLabel lblTop = new JLabel(title);
         lblTop.setFont(new Font("Segoe UI", Font.BOLD, 11));

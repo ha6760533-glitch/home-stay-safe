@@ -1,12 +1,12 @@
 package com.homestaysafe.gui;
 
+import com.homestaysafe.util.UIHelper;
 import com.homestaysafe.gui.panel.tamu.BookingCardPanel;
 import com.homestaysafe.gui.panel.tamu.FBCardPanel;
 import com.homestaysafe.gui.panel.tamu.LihatKamarPanel;
 import com.homestaysafe.gui.panel.tamu.RiwayatPanel;
 import com.homestaysafe.model.User;
 
-/** Dashboard untuk role Tamu. Kerangka UI diwarisi dari {@link BaseDashboardFrame}. */
 public class TamuFrame extends BaseDashboardFrame {
 
     public TamuFrame(User user) {

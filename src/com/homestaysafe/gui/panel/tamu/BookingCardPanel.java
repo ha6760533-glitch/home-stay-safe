@@ -1,12 +1,11 @@
 package com.homestaysafe.gui.panel.tamu;
 
+import com.homestaysafe.util.UIHelper;
 import com.homestaysafe.dao.KamarDAO;
-import com.homestaysafe.model.Kamar;
 import com.homestaysafe.exception.JadwalBentrokException;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -23,7 +22,6 @@ public class BookingCardPanel extends JPanel {
     private final Color COLOR_NAVY = new Color(15, 23, 42);
     private final Color COLOR_BG = new Color(245, 247, 250);
     private final Color COLOR_GOLD = new Color(197, 168, 128);
-    private final Color COLOR_BORDER = new Color(226, 232, 240);
 
     public BookingCardPanel(String usernameTamu, JFrame parentFrame, JPanel contentPanel, CardLayout cardLayout) {
         this.usernameTamu = usernameTamu;
@@ -40,80 +38,51 @@ public class BookingCardPanel extends JPanel {
         lblTitle.setForeground(COLOR_NAVY);
 
         KamarDAO kamarDAO = new KamarDAO();
-        List<Kamar> listKamar = kamarDAO.getAllKamar();
+        List<KamarDAO.TipeKamarSummary> listTipe = kamarDAO.getRingkasanTipeKamar();
+
+        JPanel topWrapper = new JPanel(new BorderLayout());
+        topWrapper.setBackground(COLOR_BG);
 
         JPanel gridPanel = new JPanel(new GridLayout(0, 3, 20, 20));
         gridPanel.setBackground(COLOR_BG);
 
-        for (Kamar k : listKamar) {
-            JPanel card = new JPanel(new BorderLayout(10, 10));
-            card.setBackground(Color.WHITE);
-            card.setBorder(BorderFactory.createCompoundBorder(
-                    new LineBorder(COLOR_BORDER, 1, true),
-                    new EmptyBorder(15, 15, 15, 15)
-            ));
+        for (KamarDAO.TipeKamarSummary tipe : listTipe) {
+            JPanel card = UIHelper.createRoundedCard(18, 20, 20);
+            card.setLayout(new BorderLayout(10, 14));
 
             JPanel topCard = new JPanel(new BorderLayout());
             topCard.setOpaque(false);
 
-            JLabel lblTipe = new JLabel(k.getTipeKamar());
-            lblTipe.setFont(new Font("Segoe UI", Font.BOLD, 16));
+            JLabel lblTipe = new JLabel(tipe.getTipeKamar());
+            lblTipe.setFont(new Font("Segoe UI", Font.BOLD, 18));
             lblTipe.setForeground(COLOR_NAVY);
 
-            String statusDb = k.getStatusKamar() != null ? k.getStatusKamar().trim() : "Tersedia";
-            boolean isAvailable = statusDb.equalsIgnoreCase("Tersedia");
-            boolean isMaintenance = statusDb.equalsIgnoreCase("Pemeliharaan");
-
-            JLabel lblStatus = new JLabel();
+            boolean isAvailable = tipe.getUnitTersedia() > 0;
+            JLabel lblStatus = new JLabel(isAvailable ? "● TERSEDIA" : "● PENUH");
             lblStatus.setFont(new Font("Segoe UI", Font.BOLD, 11));
-
-            JButton btnAction = new JButton();
-            btnAction.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            btnAction.setFocusPainted(false);
-            btnAction.setBorderPainted(false);
-            btnAction.setOpaque(true);
-
-            if (isAvailable) {
-                lblStatus.setText("● TERSEDIA");
-                lblStatus.setForeground(new Color(16, 185, 129));
-                btnAction.setText("Pesan Kamar Ini");
-                btnAction.setBackground(COLOR_GOLD);
-                btnAction.setForeground(Color.WHITE);
-                btnAction.setEnabled(true);
-                btnAction.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            } else if (isMaintenance) {
-                lblStatus.setText("● PEMELIHARAAN");
-                lblStatus.setForeground(new Color(245, 158, 11));
-                btnAction.setText("Sedang Pemeliharaan");
-                btnAction.setBackground(new Color(203, 213, 225));
-                btnAction.setForeground(new Color(100, 116, 139));
-                btnAction.setEnabled(false);
-            } else {
-                lblStatus.setText("● TERISI");
-                lblStatus.setForeground(new Color(239, 68, 68));
-                btnAction.setText("Kamar Terisi");
-                btnAction.setBackground(new Color(203, 213, 225));
-                btnAction.setForeground(new Color(100, 116, 139));
-                btnAction.setEnabled(false);
-            }
+            lblStatus.setForeground(isAvailable ? new Color(16, 185, 129) : new Color(239, 68, 68));
 
             topCard.add(lblTipe, BorderLayout.WEST);
             topCard.add(lblStatus, BorderLayout.EAST);
 
-            JPanel midCard = new JPanel(new GridLayout(2, 1, 4, 4));
+            JPanel midCard = new JPanel(new GridLayout(1, 1));
             midCard.setOpaque(false);
 
-            JLabel lblNoKamar = new JLabel("Nomor Kamar: " + k.getNoKamar());
-            lblNoKamar.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-
-            JLabel lblHarga = new JLabel(String.format("Rp %,.0f / malam", k.getHargaPerMalam()));
-            lblHarga.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            JLabel lblHarga = new JLabel(String.format("Rp %,.0f / malam", tipe.getHargaPerMalam()));
+            lblHarga.setFont(new Font("Segoe UI", Font.BOLD, 15));
             lblHarga.setForeground(COLOR_GOLD);
 
-            midCard.add(lblNoKamar);
             midCard.add(lblHarga);
 
-            btnAction.addActionListener(e -> showBookingDialog(k));
+            JButton btnAction = isAvailable
+                    ? UIHelper.goldButton("Pesan Kamar Ini")
+                    : UIHelper.softButton("Kamar Penuh");
+            btnAction.setPreferredSize(new Dimension(0, 40));
+            btnAction.setEnabled(isAvailable);
+
+            if (isAvailable) {
+                btnAction.addActionListener(e -> showBookingDialog(tipe));
+            }
 
             card.add(topCard, BorderLayout.NORTH);
             card.add(midCard, BorderLayout.CENTER);
@@ -122,57 +91,85 @@ public class BookingCardPanel extends JPanel {
             gridPanel.add(card);
         }
 
-        JScrollPane scrollPane = new JScrollPane(gridPanel);
+        topWrapper.add(gridPanel, BorderLayout.NORTH);
+
+        JScrollPane scrollPane = new JScrollPane(topWrapper);
         scrollPane.setBorder(null);
+        scrollPane.getViewport().setBackground(COLOR_BG);
 
         add(lblTitle, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
     }
 
-    private void showBookingDialog(Kamar kamar) {
-        JDialog dialog = new JDialog(parentFrame, "Konfirmasi Reservasi Kamar " + kamar.getNoKamar(), true);
-        dialog.setSize(420, 340);
+    private void showBookingDialog(KamarDAO.TipeKamarSummary tipe) {
+        JDialog dialog = new JDialog(parentFrame, "Konfirmasi Reservasi Tipe " + tipe.getTipeKamar(), true);
+        dialog.setSize(440, 355);
         dialog.setLocationRelativeTo(parentFrame);
+        dialog.setResizable(false);
 
-        JPanel panel = new JPanel(new GridLayout(7, 1, 8, 8));
+        JPanel panel = new JPanel(new GridBagLayout());
         panel.setBackground(Color.WHITE);
-        panel.setBorder(new EmptyBorder(20, 25, 20, 25));
+        panel.setBorder(new EmptyBorder(22, 26, 22, 26));
 
-        JLabel lblHeader = new JLabel("RESERVASI KAMAR " + kamar.getNoKamar(), SwingConstants.CENTER);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(6, 4, 6, 4);
+
+        JLabel lblHeader = new JLabel("RESERVASI KAMAR " + tipe.getTipeKamar().toUpperCase(), SwingConstants.CENTER);
         lblHeader.setFont(new Font("Serif", Font.BOLD, 18));
         lblHeader.setForeground(COLOR_NAVY);
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+        gbc.insets = new Insets(0, 4, 14, 4);
+        panel.add(lblHeader, gbc);
+
+        gbc.insets = new Insets(6, 4, 6, 4);
+        gbc.gridwidth = 1;
+
+        // Label rata kiri dengan lebar seragam
+        JLabel lblIn = new JLabel("Tgl Check-in:");
+        lblIn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblIn.setForeground(COLOR_NAVY);
+        lblIn.setPreferredSize(new Dimension(115, 36));
+        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0.0;
+        panel.add(lblIn, gbc);
 
         SpinnerDateModel modelIn = new SpinnerDateModel(new Date(), null, null, java.util.Calendar.DAY_OF_MONTH);
         JSpinner spinCheckIn = new JSpinner(modelIn);
         spinCheckIn.setEditor(new JSpinner.DateEditor(spinCheckIn, "yyyy-MM-dd"));
+        spinCheckIn.setPreferredSize(new Dimension(220, 38));
+        UIHelper.styleField(spinCheckIn);
+        gbc.gridx = 1; gbc.gridy = 1; gbc.weightx = 1.0;
+        panel.add(spinCheckIn, gbc);
+
+        JLabel lblOut = new JLabel("Tgl Check-out:");
+        lblOut.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblOut.setForeground(COLOR_NAVY);
+        lblOut.setPreferredSize(new Dimension(115, 36));
+        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0.0;
+        panel.add(lblOut, gbc);
 
         java.util.Calendar cal = java.util.Calendar.getInstance();
         cal.add(java.util.Calendar.DAY_OF_MONTH, 1);
         SpinnerDateModel modelOut = new SpinnerDateModel(cal.getTime(), null, null, java.util.Calendar.DAY_OF_MONTH);
         JSpinner spinCheckOut = new JSpinner(modelOut);
         spinCheckOut.setEditor(new JSpinner.DateEditor(spinCheckOut, "yyyy-MM-dd"));
+        spinCheckOut.setPreferredSize(new Dimension(220, 38));
+        UIHelper.styleField(spinCheckOut);
+        gbc.gridx = 1; gbc.gridy = 2; gbc.weightx = 1.0;
+        panel.add(spinCheckOut, gbc);
 
-        JPanel pIn = new JPanel(new BorderLayout());
-        pIn.setOpaque(false);
-        pIn.add(new JLabel("Tgl Check-in: "), BorderLayout.WEST);
-        pIn.add(spinCheckIn, BorderLayout.CENTER);
+        JLabel lblHarga = new JLabel("Harga per Malam: Rp " + String.format("%,.0f", tipe.getHargaPerMalam()));
+        lblHarga.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblHarga.setForeground(COLOR_GOLD);
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
+        gbc.insets = new Insets(10, 4, 8, 4);
+        panel.add(lblHarga, gbc);
 
-        JPanel pOut = new JPanel(new BorderLayout());
-        pOut.setOpaque(false);
-        pOut.add(new JLabel("Tgl Check-out: "), BorderLayout.WEST);
-        pOut.add(spinCheckOut, BorderLayout.CENTER);
-
-        JLabel lblHarga = new JLabel("Harga per Malam: Rp " + String.format("%,.0f", kamar.getHargaPerMalam()));
-        lblHarga.setFont(new Font("Segoe UI", Font.BOLD, 12));
-
-        JButton btnConfirm = new JButton("Konfirmasi & Simpan Reservasi");
-        btnConfirm.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnConfirm.setBackground(COLOR_GOLD);
-        btnConfirm.setForeground(Color.WHITE);
-        btnConfirm.setFocusPainted(false);
-        btnConfirm.setBorderPainted(false);
-        btnConfirm.setOpaque(true);
-        btnConfirm.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        JButton btnConfirm = UIHelper.goldButton("Konfirmasi & Simpan Reservasi");
+        btnConfirm.setPreferredSize(new Dimension(0, 44));
+        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2;
+        gbc.insets = new Insets(8, 4, 4, 4);
+        panel.add(btnConfirm, gbc);
 
         btnConfirm.addActionListener(e -> {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
@@ -191,15 +188,16 @@ public class BookingCardPanel extends JPanel {
             long diffMillis = dOut.getTime() - dIn.getTime();
             long days = java.util.concurrent.TimeUnit.DAYS.convert(diffMillis, java.util.concurrent.TimeUnit.MILLISECONDS);
             if (days < 1) days = 1;
-            double totalBayar = kamar.getHargaPerMalam() * days;
+            double totalBayar = tipe.getHargaPerMalam() * days;
 
             KamarDAO dao = new KamarDAO();
             try {
-                int idReservasi = dao.simpanReservasi(usernameTamu, kamar.getIdKamar(), checkIn, checkOut, totalBayar);
-                String kodeBooking = "HS-" + String.format("%05d", idReservasi);
+                int idReservasi = dao.simpanReservasiByTipe(usernameTamu, tipe.getTipeKamar(), checkIn, checkOut, totalBayar);
+                String kodeBooking = "RSV-" + idReservasi;
 
                 JOptionPane.showMessageDialog(dialog,
                         "Booking Berhasil!\n\nKode Booking: " + kodeBooking +
+                                "\nTipe Kamar: " + tipe.getTipeKamar() +
                                 "\nTotal: Rp " + String.format("%,.0f", totalBayar) +
                                 "\n\nSilakan cek di Riwayat Pemesanan.\nMenunggu verifikasi Resepsionis.",
                         "Sukses Booking", JOptionPane.INFORMATION_MESSAGE);
@@ -209,7 +207,7 @@ public class BookingCardPanel extends JPanel {
             } catch (JadwalBentrokException ex) {
                 JOptionPane.showMessageDialog(dialog,
                         "Jadwal Bentrok!\n\n" + ex.getMessage() + "\n" +
-                                "Silakan ubah tanggal atau pilih kamar lain.",
+                                "Silakan ubah tanggal atau pilih tipe kamar lain.",
                         "Jadwal Bentrok", JOptionPane.WARNING_MESSAGE);
             } catch (SQLException ex) {
                 ex.printStackTrace();
@@ -218,13 +216,6 @@ public class BookingCardPanel extends JPanel {
                         "Error Database", JOptionPane.ERROR_MESSAGE);
             }
         });
-
-        panel.add(lblHeader);
-        panel.add(pIn);
-        panel.add(pOut);
-        panel.add(lblHarga);
-        panel.add(Box.createVerticalStrut(5));
-        panel.add(btnConfirm);
 
         dialog.add(panel);
         dialog.setVisible(true);

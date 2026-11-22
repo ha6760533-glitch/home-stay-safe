@@ -1,10 +1,10 @@
 package com.homestaysafe.gui.panel.tamu;
 
+import com.homestaysafe.util.UIHelper;
 import com.homestaysafe.dao.MenuDAO;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +22,6 @@ public class FBCardPanel extends JPanel {
     private final Color COLOR_NAVY = new Color(15, 23, 42);
     private final Color COLOR_BG = new Color(245, 247, 250);
     private final Color COLOR_GOLD = new Color(197, 168, 128);
-    private final Color COLOR_BORDER = new Color(226, 232, 240);
 
     public FBCardPanel(String usernameTamu) {
         this.usernameTamu = usernameTamu;
@@ -42,12 +41,8 @@ public class FBCardPanel extends JPanel {
         List<MenuDAO.Menu> listMenu = menuDAO.getAllMenu();
 
         for (MenuDAO.Menu m : listMenu) {
-            JPanel card = new JPanel(new BorderLayout(10, 10));
-            card.setBackground(Color.WHITE);
-            card.setBorder(BorderFactory.createCompoundBorder(
-                    new LineBorder(COLOR_BORDER, 1, true),
-                    new EmptyBorder(12, 15, 12, 15)
-            ));
+            JPanel card = UIHelper.createRoundedCard(16, 14, 16);
+            card.setLayout(new BorderLayout(10, 10));
 
             JLabel lblNama = new JLabel(m.getNamaMenu());
             lblNama.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -62,13 +57,9 @@ public class FBCardPanel extends JPanel {
             infoPanel.add(lblNama);
             infoPanel.add(lblHarga);
 
-            JButton btnAdd = new JButton("+ Tambah");
+            JButton btnAdd = UIHelper.primaryButton("+ Tambah");
             btnAdd.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            btnAdd.setBackground(COLOR_NAVY);
-            btnAdd.setForeground(Color.WHITE);
-            btnAdd.setFocusPainted(false);
-            btnAdd.setBorderPainted(false);
-            btnAdd.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnAdd.setBorder(new EmptyBorder(8, 14, 8, 14));
             btnAdd.addActionListener(e -> {
                 cartItems.put(m, cartItems.getOrDefault(m, 0) + 1);
                 updateCartUI();
@@ -81,14 +72,11 @@ public class FBCardPanel extends JPanel {
 
         JScrollPane scrollMenu = new JScrollPane(gridMenuPanel);
         scrollMenu.setBorder(null);
+        scrollMenu.getViewport().setBackground(COLOR_BG);
 
-        JPanel cartPanel = new JPanel(new BorderLayout(10, 10));
-        cartPanel.setBackground(Color.WHITE);
-        cartPanel.setPreferredSize(new Dimension(320, 0));
-        cartPanel.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(COLOR_BORDER, 1, true),
-                new EmptyBorder(15, 15, 15, 15)
-        ));
+        JPanel cartPanel = UIHelper.createRoundedCard(18, 18, 18);
+        cartPanel.setLayout(new BorderLayout(10, 10));
+        cartPanel.setPreferredSize(new Dimension(330, 0));
 
         JLabel lblCartHeader = new JLabel("Keranjang Pesanan");
         lblCartHeader.setFont(new Font("Segoe UI", Font.BOLD, 16));
@@ -100,6 +88,7 @@ public class FBCardPanel extends JPanel {
 
         JScrollPane scrollCart = new JScrollPane(cartListPanel);
         scrollCart.setBorder(null);
+        scrollCart.getViewport().setBackground(Color.WHITE);
 
         JPanel cartBottomPanel = new JPanel(new GridLayout(3, 1, 6, 6));
         cartBottomPanel.setOpaque(false);
@@ -109,13 +98,8 @@ public class FBCardPanel extends JPanel {
         lblCartGrandTotal.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lblCartGrandTotal.setForeground(COLOR_GOLD);
 
-        JButton btnCheckout = new JButton("Checkout & Kirim ke Dapur");
-        btnCheckout.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnCheckout.setBackground(COLOR_GOLD);
-        btnCheckout.setForeground(Color.WHITE);
-        btnCheckout.setFocusPainted(false);
-        btnCheckout.setBorderPainted(false);
-        btnCheckout.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        JButton btnCheckout = UIHelper.goldButton("Checkout & Kirim ke Dapur");
+        btnCheckout.setPreferredSize(new Dimension(0, 42));
         btnCheckout.addActionListener(e -> processCartCheckout());
 
         cartBottomPanel.add(lblCartSummaryCount);
@@ -147,13 +131,10 @@ public class FBCardPanel extends JPanel {
             grandTotal += totalItemHarga;
             totalQty += qty;
 
-            JPanel row = new JPanel(new BorderLayout(8, 0));
+            JPanel row = UIHelper.createRoundedCard(12, 8, 10);
             row.setBackground(new Color(248, 250, 252));
-            row.setBorder(BorderFactory.createCompoundBorder(
-                    new LineBorder(new Color(226, 232, 240), 1, true),
-                    new EmptyBorder(8, 10, 8, 8)
-            ));
-            row.setMaximumSize(new Dimension(300, 48));
+            row.setLayout(new BorderLayout(8, 0));
+            row.setMaximumSize(new Dimension(310, 52));
 
             JLabel lblName = new JLabel("<html><b>" + m.getNamaMenu() + "</b><br><span style='color:#64748b; font-size:10px;'>x" + qty + "</span></html>");
             lblName.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -163,15 +144,11 @@ public class FBCardPanel extends JPanel {
             lblPrice.setForeground(COLOR_NAVY);
             lblPrice.setHorizontalAlignment(SwingConstants.RIGHT);
 
-            JButton btnDelete = new JButton("X");
-            btnDelete.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            btnDelete.setForeground(Color.WHITE);
-            btnDelete.setBackground(new Color(239, 68, 68));
+            // Tombol hapus merah dengan tanda silang tajam (tanpa terpotong titik-titik)
+            JButton btnDelete = UIHelper.createRoundedButton("×",
+                    UIHelper.COLOR_DANGER, UIHelper.COLOR_DANGER_HOVER, UIHelper.COLOR_DANGER.darker(), Color.WHITE, 8, 15);
+            btnDelete.setBorder(new EmptyBorder(0, 0, 2, 0));
             btnDelete.setMargin(new Insets(0, 0, 0, 0));
-            btnDelete.setFocusPainted(false);
-            btnDelete.setBorderPainted(false);
-            btnDelete.setOpaque(true);
-            btnDelete.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnDelete.setPreferredSize(new Dimension(28, 28));
             btnDelete.setToolTipText("Hapus item");
             btnDelete.addActionListener(e -> {
@@ -179,7 +156,7 @@ public class FBCardPanel extends JPanel {
                 updateCartUI();
             });
 
-            JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+            JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 2));
             rightPanel.setOpaque(false);
             rightPanel.add(lblPrice);
             rightPanel.add(btnDelete);
@@ -201,7 +178,9 @@ public class FBCardPanel extends JPanel {
     private void processCartCheckout() {
         MenuDAO menuDAO = new MenuDAO();
         if (!menuDAO.hasActiveReservation(usernameTamu)) {
-            JOptionPane.showMessageDialog(this, "Pemesanan makanan ditolak!\nAnda belum memiliki reservasi kamar yang disetujui / aktif.", "Akses Ditolak", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Pemesanan makanan belum tersedia!\nLayanan F&B hanya dapat dipesan setelah Anda melakukan Check-In dan menerima kunci kamar dari Resepsionis.",
+                    "Belum Check-In", JOptionPane.WARNING_MESSAGE);
             return;
         }
 

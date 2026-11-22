@@ -1,5 +1,6 @@
 package com.homestaysafe.gui.panel.tamu;
 
+import com.homestaysafe.util.UIHelper;
 import com.homestaysafe.dao.MenuDAO;
 import com.homestaysafe.dao.ReservasiDAO;
 
@@ -51,15 +52,9 @@ public class RiwayatPanel extends JPanel {
         btnFilterKamar = createFilterButton("Reservasi Kamar", false);
         btnFilterFB = createFilterButton("Pesanan Makanan (F&B)", false);
 
-        JButton btnRefresh = new JButton("Refresh");
-        btnRefresh.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnRefresh.setBackground(COLOR_GOLD);
-        btnRefresh.setForeground(Color.WHITE);
-        btnRefresh.setFocusPainted(false);
-        btnRefresh.setOpaque(true);
-        btnRefresh.setBorderPainted(false);
-        btnRefresh.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnRefresh.setPreferredSize(new Dimension(90, 32));
+        JButton btnRefresh = UIHelper.createRoundedButton("Refresh", COLOR_GOLD, UIHelper.COLOR_GOLD_HOVER, Color.WHITE, 12);
+        btnRefresh.setBorder(new EmptyBorder(6, 16, 6, 16));
+        btnRefresh.setPreferredSize(new Dimension(96, 34));
 
         btnFilterSemua.addActionListener(e -> setFilter("SEMUA"));
         btnFilterKamar.addActionListener(e -> setFilter("KAMAR"));
@@ -69,7 +64,7 @@ public class RiwayatPanel extends JPanel {
         filterBar.add(btnFilterSemua);
         filterBar.add(btnFilterKamar);
         filterBar.add(btnFilterFB);
-        filterBar.add(Box.createHorizontalStrut(10));
+        filterBar.add(Box.createHorizontalStrut(8));
         filterBar.add(btnRefresh);
 
         topPanel.add(lblTitle, BorderLayout.NORTH);
@@ -211,7 +206,7 @@ public class RiwayatPanel extends JPanel {
         table.getColumnModel().getColumn(4).setPreferredWidth(135);
 
         JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createLineBorder(COLOR_BORDER, 1));
+        scrollPane.setBorder(new LineBorder(COLOR_BORDER, 1, true));
         scrollPane.getViewport().setBackground(Color.WHITE);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
@@ -234,13 +229,29 @@ public class RiwayatPanel extends JPanel {
     }
 
     private JButton createFilterButton(String text, boolean active) {
-        JButton btn = new JButton(text);
+        JButton btn = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getBackground());
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                if (Color.WHITE.equals(getBackground())) {
+                    g2.setColor(COLOR_BORDER);
+                    g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 12, 12);
+                }
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
         btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btn.setFocusPainted(false);
-        btn.setOpaque(true);
+        btn.setContentAreaFilled(false);
+        btn.setOpaque(false);
         btn.setBorderPainted(false);
+        btn.setBorder(new EmptyBorder(6, 14, 6, 14));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setPreferredSize(new Dimension(165, 32));
+        btn.setPreferredSize(new Dimension(195, 34));
         styleFilterButton(btn, active);
         return btn;
     }
@@ -253,6 +264,7 @@ public class RiwayatPanel extends JPanel {
             btn.setBackground(Color.WHITE);
             btn.setForeground(COLOR_NAVY);
         }
+        btn.repaint();
     }
 
     private void setFilter(String filter) {
@@ -264,12 +276,8 @@ public class RiwayatPanel extends JPanel {
     }
 
     private JPanel createSummaryCard(String title, JLabel valueLabel, Color accentColor) {
-        JPanel card = new JPanel(new GridLayout(2, 1, 2, 4));
-        card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(COLOR_BORDER, 1, true),
-                new EmptyBorder(12, 16, 12, 16)
-        ));
+        JPanel card = UIHelper.createRoundedCard(14, 12, 16);
+        card.setLayout(new GridLayout(2, 1, 2, 4));
 
         JLabel lblTitle = new JLabel(title);
         lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -300,7 +308,7 @@ public class RiwayatPanel extends JPanel {
 
         for (ReservasiDAO.RiwayatItem r : listKamar) {
             String jenis = r.getJenisPesanan() != null ? r.getJenisPesanan().toLowerCase() : "";
-            // Lewati baris "Food & Beverage" yang ikut terbawa dari ReservasiDAO
+
             if (jenis.contains("food") || jenis.contains("beverage") || jenis.contains("f&b") || jenis.contains("makanan")) {
                 continue;
             }

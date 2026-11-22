@@ -1,20 +1,21 @@
 package com.homestaysafe.gui.panel.tamu;
 
+import com.homestaysafe.util.UIHelper;
 import com.homestaysafe.dao.KamarDAO;
 import com.homestaysafe.model.Kamar;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
 import java.awt.*;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class LihatKamarPanel extends JPanel {
 
     private final Color COLOR_NAVY = new Color(15, 23, 42);
     private final Color COLOR_BG = new Color(245, 247, 250);
     private final Color COLOR_GOLD = new Color(197, 168, 128);
-    private final Color COLOR_BORDER = new Color(226, 232, 240);
 
     public LihatKamarPanel() {
         setLayout(new BorderLayout(15, 15));
@@ -29,51 +30,49 @@ public class LihatKamarPanel extends JPanel {
         KamarDAO kamarDAO = new KamarDAO();
         List<Kamar> listKamar = kamarDAO.getAllKamar();
 
+        Map<String, Kamar> perwakilanTipe = new LinkedHashMap<>();
+        Map<String, Integer> jumlahTersedia = new LinkedHashMap<>();
+
+        for (Kamar k : listKamar) {
+            String tipe = k.getTipeKamar() != null ? k.getTipeKamar().trim() : "Standard";
+            perwakilanTipe.putIfAbsent(tipe, k);
+
+            String statusDb = k.getStatusKamar() != null ? k.getStatusKamar().trim() : "Tersedia";
+            int tambah = statusDb.equalsIgnoreCase("Tersedia") ? 1 : 0;
+            jumlahTersedia.put(tipe, jumlahTersedia.getOrDefault(tipe, 0) + tambah);
+        }
+
         JPanel mainContainer = new JPanel(new BorderLayout());
         mainContainer.setBackground(COLOR_BG);
 
         JPanel gridPanel = new JPanel(new GridLayout(0, 3, 20, 20));
         gridPanel.setBackground(COLOR_BG);
 
-        for (Kamar k : listKamar) {
-            JPanel card = new JPanel(new BorderLayout(10, 10));
-            card.setBackground(Color.WHITE);
-            card.setBorder(BorderFactory.createCompoundBorder(
-                    new LineBorder(COLOR_BORDER, 1, true),
-                    new EmptyBorder(15, 15, 15, 15)
-            ));
+        for (Map.Entry<String, Kamar> entry : perwakilanTipe.entrySet()) {
+            String tipe = entry.getKey();
+            Kamar k = entry.getValue();
+            boolean isAvailable = jumlahTersedia.getOrDefault(tipe, 0) > 0;
+
+            JPanel card = UIHelper.createRoundedCard(18, 18, 18);
+            card.setLayout(new BorderLayout(10, 10));
 
             JPanel topCard = new JPanel(new BorderLayout());
             topCard.setOpaque(false);
 
-            JLabel lblTipe = new JLabel(k.getTipeKamar() + " (No. " + k.getNoKamar() + ")");
-            lblTipe.setFont(new Font("Segoe UI", Font.BOLD, 15));
+            JLabel lblTipe = new JLabel(tipe);
+            lblTipe.setFont(new Font("Segoe UI", Font.BOLD, 17));
             lblTipe.setForeground(COLOR_NAVY);
 
-            String statusDb = k.getStatusKamar() != null ? k.getStatusKamar().trim() : "Tersedia";
-            boolean isAvailable = statusDb.equalsIgnoreCase("Tersedia");
-            boolean isMaintenance = statusDb.equalsIgnoreCase("Pemeliharaan");
-
-            JLabel lblStatus = new JLabel();
+            JLabel lblStatus = new JLabel(isAvailable ? "● TERSEDIA" : "● PENUH");
             lblStatus.setFont(new Font("Segoe UI", Font.BOLD, 11));
-
-            if (isAvailable) {
-                lblStatus.setText("● TERSEDIA");
-                lblStatus.setForeground(new Color(16, 185, 129));
-            } else if (isMaintenance) {
-                lblStatus.setText("● PEMELIHARAAN");
-                lblStatus.setForeground(new Color(245, 158, 11));
-            } else {
-                lblStatus.setText("● TERISI");
-                lblStatus.setForeground(new Color(239, 68, 68));
-            }
+            lblStatus.setForeground(isAvailable ? new Color(16, 185, 129) : new Color(239, 68, 68));
 
             topCard.add(lblTipe, BorderLayout.WEST);
             topCard.add(lblStatus, BorderLayout.EAST);
 
-            String fasilitas = k.getFasilitas(); // Polymorphism: tiap subclass Kamar punya fasilitas sendiri
+            String fasilitas = k.getFasilitas();
 
-            JPanel midCard = new JPanel(new GridLayout(3, 1, 4, 4));
+            JPanel midCard = new JPanel(new GridLayout(3, 1, 4, 6));
             midCard.setOpaque(false);
 
             JLabel lblFasilitasTitle = new JLabel("Fasilitas Utama:");
@@ -84,7 +83,7 @@ public class LihatKamarPanel extends JPanel {
             lblFasilitas.setFont(new Font("Segoe UI", Font.PLAIN, 12));
 
             JLabel lblHarga = new JLabel(String.format("Rp %,.0f / malam", k.getHargaPerMalam()));
-            lblHarga.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            lblHarga.setFont(new Font("Segoe UI", Font.BOLD, 15));
             lblHarga.setForeground(COLOR_GOLD);
 
             midCard.add(lblFasilitasTitle);
@@ -101,6 +100,7 @@ public class LihatKamarPanel extends JPanel {
 
         JScrollPane scrollPane = new JScrollPane(mainContainer);
         scrollPane.setBorder(null);
+        scrollPane.getViewport().setBackground(COLOR_BG);
         scrollPane.getVerticalScrollBar().setUnitIncrement(12);
 
         add(scrollPane, BorderLayout.CENTER);
