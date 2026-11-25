@@ -73,19 +73,32 @@ public class ResepsionisDAO {
                 "JOIN users u ON r.id_user = u.id_user " +
                 "JOIN tipe_kamar tk ON r.id_tipe_kamar = tk.id_tipe_kamar " +
                 "LEFT JOIN kamar k ON r.id_kamar = k.id_kamar " +
-                "WHERE u.username ILIKE ? OR u.nama ILIKE ? OR COALESCE(u.no_identitas, '') ILIKE ? " +
-                "OR COALESCE(k.no_kamar, '') ILIKE ? OR tk.nama_tipe ILIKE ? " +
+                "WHERE ('RSV-' || CAST(r.id_reservasi AS TEXT)) ILIKE ? " +
+                "OR CAST(r.id_reservasi AS TEXT) ILIKE ? " +
+                "OR TRIM(u.username) ILIKE ? " +
+                "OR TRIM(u.nama) ILIKE ? " +
+                "OR COALESCE(TRIM(u.no_identitas), '') ILIKE ? " +
+                "OR COALESCE(TRIM(k.no_kamar), '') ILIKE ? " +
+                "OR TRIM(tk.nama_tipe) ILIKE ? " +
                 "ORDER BY r.id_reservasi DESC";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            String kw = "%" + (keyword == null ? "" : keyword.trim()) + "%";
-            stmt.setString(1, kw);
-            stmt.setString(2, kw);
-            stmt.setString(3, kw);
-            stmt.setString(4, kw);
-            stmt.setString(5, kw);
+            String cleanKw = (keyword == null ? "" : keyword.trim());
+            String numericKw = cleanKw.replaceAll("(?i)^rsv-?", "").trim();
+            if (numericKw.isEmpty()) numericKw = cleanKw;
+
+            String kwFull = "%" + cleanKw + "%";
+            String kwNum = "%" + numericKw + "%";
+
+            stmt.setString(1, kwFull);
+            stmt.setString(2, kwNum);
+            stmt.setString(3, kwFull);
+            stmt.setString(4, kwFull);
+            stmt.setString(5, kwFull);
+            stmt.setString(6, kwFull);
+            stmt.setString(7, kwFull);
 
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
@@ -157,7 +170,6 @@ public class ResepsionisDAO {
             try (PreparedStatement psRes = conn.prepareStatement(sqlRes)) {
                 psRes.setInt(1, idKamar);
                 psRes.setInt(2, idReservasi);
-                // Trigger trg_sync_status_kamar otomatis mengubah status_kamar menjadi 'Terisi'
                 int updated = psRes.executeUpdate();
                 conn.commit();
                 return updated > 0;
@@ -178,7 +190,7 @@ public class ResepsionisDAO {
             throw new JadwalBentrokException(kamarDAO.getNoKamarById(idKamar), checkIn, checkOut);
         }
 
-        String sqlCheckUser = "SELECT id_user, username FROM users WHERE no_identitas = ?";
+        String sqlCheckUser = "SELECT id_user, username FROM users WHERE TRIM(no_identitas) = ?";
         String sqlCheckUsernameExist = "SELECT 1 FROM users WHERE LOWER(username) = LOWER(?)";
         String sqlInsertUser = "INSERT INTO users (nama, username, password_hash, role, no_identitas) VALUES (?, ?, ?, 'Tamu', ?) RETURNING id_user";
         String sqlKamarInfo = "SELECT k.id_tipe_kamar, tk.harga_per_malam FROM kamar k JOIN tipe_kamar tk ON k.id_tipe_kamar = tk.id_tipe_kamar WHERE k.id_kamar = ?";
@@ -251,7 +263,6 @@ public class ResepsionisDAO {
                     psRes.setDate(4, java.sql.Date.valueOf(checkIn));
                     psRes.setDate(5, java.sql.Date.valueOf(checkOut));
                     psRes.setDouble(6, hargaDeal);
-                    // Trigger trg_sync_status_kamar otomatis mengubah status_kamar menjadi 'Terisi'
                     psRes.executeUpdate();
                 }
 
@@ -365,7 +376,6 @@ public class ResepsionisDAO {
                 psRes.setInt(1, idReservasi);
                 psRes.executeUpdate();
 
-                // Jalankan setelah update reservasi agar override trigger menjadi Pemeliharaan (perlu dibersihkan)
                 psKam.setInt(1, idReservasi);
                 psKam.executeUpdate();
 
