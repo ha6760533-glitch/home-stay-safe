@@ -47,31 +47,52 @@ public class BookingCardPanel extends JPanel {
         gridPanel.setBackground(COLOR_BG);
 
         for (KamarDAO.TipeKamarSummary tipe : listTipe) {
-            JPanel card = UIHelper.createRoundedCard(18, 20, 20);
-            card.setLayout(new BorderLayout(10, 14));
+            JPanel card = UIHelper.createRoundedCard(18, 16, 16);
+            card.setLayout(new BorderLayout(0, 12));
 
-            JPanel topCard = new JPanel(new BorderLayout());
-            topCard.setOpaque(false);
+            // Foto Tipe Kamar
+            JLabel lblFoto = new JLabel(UIHelper.getKamarImageIcon(tipe.getTipeKamar(), 310, 150, 14), SwingConstants.CENTER);
+            lblFoto.setPreferredSize(new Dimension(310, 150));
+
+            JPanel topInfo = new JPanel(new BorderLayout());
+            topInfo.setOpaque(false);
 
             JLabel lblTipe = new JLabel(tipe.getTipeKamar());
-            lblTipe.setFont(new Font("Segoe UI", Font.BOLD, 18));
+            lblTipe.setFont(new Font("Segoe UI", Font.BOLD, 17));
             lblTipe.setForeground(COLOR_NAVY);
 
             boolean isAvailable = tipe.getUnitTersedia() > 0;
-            JLabel lblStatus = new JLabel(isAvailable ? "● TERSEDIA" : "● PENUH");
+            JLabel lblStatus = new JLabel(isAvailable ? "● TERSEDIA (" + tipe.getUnitTersedia() + ")" : "● PENUH");
             lblStatus.setFont(new Font("Segoe UI", Font.BOLD, 11));
             lblStatus.setForeground(isAvailable ? new Color(16, 185, 129) : new Color(239, 68, 68));
 
-            topCard.add(lblTipe, BorderLayout.WEST);
-            topCard.add(lblStatus, BorderLayout.EAST);
+            topInfo.add(lblTipe, BorderLayout.WEST);
+            topInfo.add(lblStatus, BorderLayout.EAST);
 
-            JPanel midCard = new JPanel(new GridLayout(1, 1));
+            JPanel northCard = new JPanel(new BorderLayout(0, 10));
+            northCard.setOpaque(false);
+            northCard.add(lblFoto, BorderLayout.NORTH);
+            northCard.add(topInfo, BorderLayout.SOUTH);
+
+            JPanel midCard = new JPanel();
+            midCard.setLayout(new BoxLayout(midCard, BoxLayout.Y_AXIS));
             midCard.setOpaque(false);
+
+            String deskripsi = (tipe.getDeskripsi() != null && !tipe.getDeskripsi().isEmpty())
+                    ? tipe.getDeskripsi()
+                    : "Kamar nyaman dengan fasilitas lengkap HomestaySafe";
+            JLabel lblDesc = new JLabel("<html><body style='width: 255px;'>" + deskripsi + "</body></html>");
+            lblDesc.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            lblDesc.setForeground(new Color(100, 116, 139));
+            lblDesc.setAlignmentX(Component.LEFT_ALIGNMENT);
+            lblDesc.setBorder(new EmptyBorder(0, 0, 8, 0));
 
             JLabel lblHarga = new JLabel(String.format("Rp %,.0f / malam", tipe.getHargaPerMalam()));
             lblHarga.setFont(new Font("Segoe UI", Font.BOLD, 15));
             lblHarga.setForeground(COLOR_GOLD);
+            lblHarga.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+            midCard.add(lblDesc);
             midCard.add(lblHarga);
 
             JButton btnAction = isAvailable
@@ -84,7 +105,7 @@ public class BookingCardPanel extends JPanel {
                 btnAction.addActionListener(e -> showBookingDialog(tipe));
             }
 
-            card.add(topCard, BorderLayout.NORTH);
+            card.add(northCard, BorderLayout.NORTH);
             card.add(midCard, BorderLayout.CENTER);
             card.add(btnAction, BorderLayout.SOUTH);
 
@@ -96,6 +117,7 @@ public class BookingCardPanel extends JPanel {
         JScrollPane scrollPane = new JScrollPane(topWrapper);
         scrollPane.setBorder(null);
         scrollPane.getViewport().setBackground(COLOR_BG);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(14);
 
         add(lblTitle, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
@@ -125,7 +147,6 @@ public class BookingCardPanel extends JPanel {
         gbc.insets = new Insets(6, 4, 6, 4);
         gbc.gridwidth = 1;
 
-        // Label rata kiri dengan lebar seragam
         JLabel lblIn = new JLabel("Tgl Check-in:");
         lblIn.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lblIn.setForeground(COLOR_NAVY);

@@ -1,58 +1,76 @@
 package com.homestaysafe.model;
 
 /**
- * Abstract class Kamar → Abstraction + base Inheritance.
- * Setiap tipe kamar (Standard, Deluxe, Suite) menentukan sendiri fasilitas,
- * kapasitas, dan deskripsinya lewat method abstract → Polymorphism.
- *
- * Pemanggil (panel GUI) cukup memanggil {@code kamar.getFasilitas()} tanpa
- * if/else berdasarkan tipe kamar.
+ * Abstract class Kamar -> Abstraction + base Inheritance.
+ * Mendukung 5 tipe kamar pada tabel tipe_kamar:
+ * Standard, Deluxe, Executive, Junior Suite, dan Presidential Suite.
  */
 public abstract class Kamar {
 
     private final int idKamar;
+    private final int idTipeKamar;
     private final String noKamar;
     private final String tipeKamar;
     private final double hargaPerMalam;
     private final String statusKamar;
+    private final String deskripsi;
 
-    protected Kamar(int idKamar, String noKamar, String tipeKamar, double hargaPerMalam, String statusKamar) {
+    protected Kamar(int idKamar, int idTipeKamar, String noKamar, String tipeKamar,
+                    double hargaPerMalam, String statusKamar, String deskripsi) {
         this.idKamar = idKamar;
+        this.idTipeKamar = idTipeKamar;
         this.noKamar = noKamar;
         this.tipeKamar = tipeKamar;
         this.hargaPerMalam = hargaPerMalam;
         this.statusKamar = statusKamar;
+        this.deskripsi = deskripsi;
     }
 
     // ===== Encapsulation =====
     public int getIdKamar() { return idKamar; }
+    public int getIdTipeKamar() { return idTipeKamar; }
     public String getNoKamar() { return noKamar; }
     public String getTipeKamar() { return tipeKamar; }
     public double getHargaPerMalam() { return hargaPerMalam; }
     public String getStatusKamar() { return statusKamar; }
+    public String getDeskripsi() { return deskripsi; }
 
-    // ===== Abstraction + Polymorphism (di-override subclass) =====
-    public abstract String getFasilitas();
+    // ===== Abstraction + Polymorphism =====
+    public abstract String getDefaultFasilitas();
     public abstract int getKapasitas();
 
-    /** Biaya sewa untuk sejumlah malam. */
+    /** Mengutamakan deskripsi dari tabel tipe_kamar, fallback ke fasilitas default subclass. */
+    public String getFasilitas() {
+        return (deskripsi != null && !deskripsi.trim().isEmpty())
+                ? deskripsi.trim()
+                : getDefaultFasilitas();
+    }
+
     public double hitungBiaya(int jumlahMalam) {
         return hargaPerMalam * Math.max(jumlahMalam, 0);
     }
 
-    /** Ringkasan satu baris, memanfaatkan method polymorphic subclass. */
     public String getRingkasan() {
         return tipeKamar + " No. " + noKamar + " | " + getKapasitas() + " orang | " + getFasilitas();
     }
 
-    /**
-     * Factory: membuat subclass yang sesuai dengan tipe yang tersimpan di database.
-     * Tipe yang tidak dikenal diperlakukan sebagai Standard (tipe aslinya tetap disimpan).
-     */
+    /** Factory overload lama (kompatibilitas) */
     public static Kamar buat(int id, String no, String tipe, double harga, String status) {
+        return buat(id, 0, no, tipe, harga, status, null);
+    }
+
+    /** Factory lengkap sesuai tabel kamar JOIN tipe_kamar */
+    public static Kamar buat(int id, int idTipe, String no, String tipe, double harga, String status, String deskripsi) {
         String t = tipe == null ? "" : tipe.trim();
-        if (t.equalsIgnoreCase("Suite"))  return new SuiteRoom(id, no, t, harga, status);
-        if (t.equalsIgnoreCase("Deluxe")) return new DeluxeRoom(id, no, t, harga, status);
-        return new StandardRoom(id, no, t.isEmpty() ? "Standard" : t, harga, status);
+        if (t.equalsIgnoreCase("Presidential Suite") || t.equalsIgnoreCase("Junior Suite") || t.equalsIgnoreCase("Suite")) {
+            return new SuiteRoom(id, idTipe, no, t, harga, status, deskripsi);
+        }
+        if (t.equalsIgnoreCase("Executive")) {
+            return new ExecutiveRoom(id, idTipe, no, t, harga, status, deskripsi);
+        }
+        if (t.equalsIgnoreCase("Deluxe")) {
+            return new DeluxeRoom(id, idTipe, no, t, harga, status, deskripsi);
+        }
+        return new StandardRoom(id, idTipe, no, t.isEmpty() ? "Standard" : t, harga, status, deskripsi);
     }
 }

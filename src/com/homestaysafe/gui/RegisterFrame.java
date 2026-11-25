@@ -28,33 +28,37 @@ public class RegisterFrame extends JFrame {
         userDAO = new UserDAO();
 
         setTitle("HomestaySafe - Registrasi Akun Tamu");
-        setSize(490, 610);
+        setSize(490, 665);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(true);
 
         JPanel outerPanel = new JPanel(new GridBagLayout());
         outerPanel.setBackground(COLOR_BG);
-        outerPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        outerPanel.setBorder(new EmptyBorder(16, 20, 16, 20));
 
-        JPanel cardPanel = UIHelper.createRoundedCard(22, 28, 32);
+        JPanel cardPanel = UIHelper.createRoundedCard(22, 22, 32);
         cardPanel.setLayout(new GridBagLayout());
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 6, 5, 6);
+        gbc.insets = new Insets(4, 6, 4, 6);
         gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        JLabel lblLogo = new JLabel(UIHelper.getLogoIcon(52, 56), SwingConstants.CENTER);
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+        cardPanel.add(lblLogo, gbc);
 
         JLabel lblHeaderTag = new JLabel("HOMESTAYSAFE RESORT & HOTEL", SwingConstants.CENTER);
         lblHeaderTag.setFont(new Font("Segoe UI", Font.BOLD, 11));
         lblHeaderTag.setForeground(COLOR_GOLD);
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 2;
         cardPanel.add(lblHeaderTag, gbc);
 
         JLabel lblTitle = new JLabel("Registrasi Tamu Baru", SwingConstants.CENTER);
-        lblTitle.setFont(new Font("Serif", Font.BOLD, 23));
+        lblTitle.setFont(new Font("Serif", Font.BOLD, 22));
         lblTitle.setForeground(COLOR_NAVY);
-        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 2;
-        gbc.insets = new Insets(0, 6, 15, 6);
+        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 2;
+        gbc.insets = new Insets(0, 6, 12, 6);
         cardPanel.add(lblTitle, gbc);
 
         gbc.insets = new Insets(4, 6, 4, 6);
@@ -62,44 +66,44 @@ public class RegisterFrame extends JFrame {
         JLabel lblNama = new JLabel("NAMA LENGKAP");
         lblNama.setFont(new Font("Segoe UI", Font.BOLD, 11));
         lblNama.setForeground(COLOR_NAVY);
-        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 2;
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
         cardPanel.add(lblNama, gbc);
 
         txtNama = createStyledTextField();
-        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
+        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2;
         cardPanel.add(txtNama, gbc);
 
         JLabel lblNoIdentitas = new JLabel("NO. IDENTITAS KTP (16 DIGIT ANGKA)");
         lblNoIdentitas.setFont(new Font("Segoe UI", Font.BOLD, 11));
         lblNoIdentitas.setForeground(COLOR_NAVY);
-        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2;
+        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2;
         cardPanel.add(lblNoIdentitas, gbc);
 
         txtNoIdentitas = createStyledTextField();
-        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2;
+        gbc.gridx = 0; gbc.gridy = 6; gbc.gridwidth = 2;
         cardPanel.add(txtNoIdentitas, gbc);
 
         JLabel lblUser = new JLabel("USERNAME");
         lblUser.setFont(new Font("Segoe UI", Font.BOLD, 11));
         lblUser.setForeground(COLOR_NAVY);
-        gbc.gridx = 0; gbc.gridy = 6; gbc.gridwidth = 2;
+        gbc.gridx = 0; gbc.gridy = 7; gbc.gridwidth = 2;
         cardPanel.add(lblUser, gbc);
 
         txtUsername = createStyledTextField();
-        gbc.gridx = 0; gbc.gridy = 7; gbc.gridwidth = 2;
+        gbc.gridx = 0; gbc.gridy = 8; gbc.gridwidth = 2;
         cardPanel.add(txtUsername, gbc);
 
         JLabel lblPass = new JLabel("PASSWORD (MINIMAL 6 DIGIT)");
         lblPass.setFont(new Font("Segoe UI", Font.BOLD, 11));
         lblPass.setForeground(COLOR_NAVY);
-        gbc.gridx = 0; gbc.gridy = 8; gbc.gridwidth = 2;
+        gbc.gridx = 0; gbc.gridy = 9; gbc.gridwidth = 2;
         cardPanel.add(lblPass, gbc);
 
         txtPassword = new JPasswordField();
         txtPassword.setPreferredSize(new Dimension(250, 38));
         txtPassword.setEchoChar('•');
         UIHelper.styleField(txtPassword);
-        gbc.gridx = 0; gbc.gridy = 9; gbc.gridwidth = 1;
+        gbc.gridx = 0; gbc.gridy = 10; gbc.gridwidth = 1;
         gbc.weightx = 1.0;
         cardPanel.add(txtPassword, gbc);
 
@@ -112,7 +116,7 @@ public class RegisterFrame extends JFrame {
             }
             btnTogglePass.repaint();
         });
-        gbc.gridx = 1; gbc.gridy = 9; gbc.gridwidth = 1;
+        gbc.gridx = 1; gbc.gridy = 10; gbc.gridwidth = 1;
         gbc.weightx = 0.0;
         cardPanel.add(btnTogglePass, gbc);
 
@@ -120,8 +124,8 @@ public class RegisterFrame extends JFrame {
         btnRegister.setPreferredSize(new Dimension(300, 44));
         btnRegister.addActionListener(e -> processRegister());
 
-        gbc.gridx = 0; gbc.gridy = 10; gbc.gridwidth = 2;
-        gbc.insets = new Insets(16, 6, 4, 6);
+        gbc.gridx = 0; gbc.gridy = 11; gbc.gridwidth = 2;
+        gbc.insets = new Insets(14, 6, 4, 6);
         cardPanel.add(btnRegister, gbc);
 
         btnBackToLogin = new JButton("Sudah Memiliki Akun? Masuk di Sini");
@@ -136,7 +140,7 @@ public class RegisterFrame extends JFrame {
             new LoginFrame().setVisible(true);
         });
 
-        gbc.gridx = 0; gbc.gridy = 11; gbc.gridwidth = 2;
+        gbc.gridx = 0; gbc.gridy = 12; gbc.gridwidth = 2;
         gbc.insets = new Insets(2, 6, 2, 6);
         cardPanel.add(btnBackToLogin, gbc);
 

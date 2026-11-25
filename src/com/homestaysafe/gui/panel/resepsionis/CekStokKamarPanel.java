@@ -32,8 +32,10 @@ public class CekStokKamarPanel extends JPanel {
         JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         filterPanel.setOpaque(false);
 
-        cbTipe = new JComboBox<>(new String[]{"Semua Tipe", "Standard", "Deluxe", "Suite"});
-        cbTipe.setPreferredSize(new Dimension(145, 36));
+        cbTipe = new JComboBox<>(new String[]{
+                "Semua Tipe", "Standard", "Deluxe", "Executive", "Junior Suite", "Presidential Suite"
+        });
+        cbTipe.setPreferredSize(new Dimension(170, 36));
         UIHelper.styleField(cbTipe);
 
         cbStatus = new JComboBox<>(new String[]{"Semua Status", "Tersedia", "Terisi", "Pemeliharaan"});
@@ -75,6 +77,7 @@ public class CekStokKamarPanel extends JPanel {
         JScrollPane scrollPane = new JScrollPane(mainContainer);
         scrollPane.setBorder(null);
         scrollPane.getViewport().setBackground(COLOR_BG);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(14);
 
         add(topBar, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
@@ -102,7 +105,7 @@ public class CekStokKamarPanel extends JPanel {
             topCard.setOpaque(false);
 
             JLabel lblTipe = new JLabel(k.getTipeKamar() + " (No. " + k.getNoKamar() + ")");
-            lblTipe.setFont(new Font("Segoe UI", Font.BOLD, 15));
+            lblTipe.setFont(new Font("Segoe UI", Font.BOLD, 14));
             lblTipe.setForeground(COLOR_NAVY);
 
             boolean isAvailable = statusDb.equalsIgnoreCase("Tersedia");
@@ -125,25 +128,31 @@ public class CekStokKamarPanel extends JPanel {
             topCard.add(lblTipe, BorderLayout.WEST);
             topCard.add(lblStatus, BorderLayout.EAST);
 
-            String fasilitas = k.getFasilitas();
+            JLabel lblThumb = new JLabel(UIHelper.getKamarImageIcon(k.getTipeKamar(), 84, 72, 10));
+            lblThumb.setPreferredSize(new Dimension(84, 72));
 
-            JPanel midCard = new JPanel(new GridLayout(3, 1, 4, 4));
-            midCard.setOpaque(false);
+            JPanel midInfo = new JPanel();
+            midInfo.setLayout(new BoxLayout(midInfo, BoxLayout.Y_AXIS));
+            midInfo.setOpaque(false);
 
-            JLabel lblFasilitasTitle = new JLabel("Fasilitas Utama:");
-            lblFasilitasTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            lblFasilitasTitle.setForeground(new Color(100, 116, 139));
-
-            JLabel lblFasilitas = new JLabel("<html><body style='width: 180px;'>" + fasilitas + "</body></html>");
-            lblFasilitas.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            JLabel lblFasilitas = new JLabel("<html><body style='width: 170px;'>" + k.getFasilitas() + "</body></html>");
+            lblFasilitas.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+            lblFasilitas.setForeground(new Color(100, 116, 139));
+            lblFasilitas.setAlignmentX(Component.LEFT_ALIGNMENT);
 
             JLabel lblHarga = new JLabel(String.format("Rp %,.0f / malam", k.getHargaPerMalam()));
             lblHarga.setFont(new Font("Segoe UI", Font.BOLD, 14));
             lblHarga.setForeground(COLOR_GOLD);
+            lblHarga.setAlignmentX(Component.LEFT_ALIGNMENT);
+            lblHarga.setBorder(new EmptyBorder(6, 0, 0, 0));
 
-            midCard.add(lblFasilitasTitle);
-            midCard.add(lblFasilitas);
-            midCard.add(lblHarga);
+            midInfo.add(lblFasilitas);
+            midInfo.add(lblHarga);
+
+            JPanel midCard = new JPanel(new BorderLayout(10, 0));
+            midCard.setOpaque(false);
+            midCard.add(lblThumb, BorderLayout.WEST);
+            midCard.add(midInfo, BorderLayout.CENTER);
 
             JPanel bottomCard = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
             bottomCard.setOpaque(false);

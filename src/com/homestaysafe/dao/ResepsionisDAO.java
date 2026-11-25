@@ -65,12 +65,16 @@ public class ResepsionisDAO {
     public List<ReservasiDetail> getDaftarReservasi(String keyword) {
         List<ReservasiDetail> list = new ArrayList<>();
         String sql = "SELECT r.id_reservasi, u.username, u.nama, COALESCE(u.no_identitas, '-') AS no_identitas, " +
-                "COALESCE(r.no_kamar, '-') AS no_kamar, COALESCE(r.tipe_kamar, '-') AS tipe_kamar, " +
-                "r.tgl_checkin, r.tgl_checkout_rencana, r.total_biaya, r.status_reservasi " +
+                "COALESCE(k.no_kamar, '-') AS no_kamar, tk.nama_tipe AS tipe_kamar, " +
+                "r.tgl_checkin, r.tgl_checkout_rencana, " +
+                "(GREATEST(1, r.tgl_checkout_rencana - r.tgl_checkin) * r.harga_kamar_deal) AS total_biaya_kamar, " +
+                "r.status_reservasi " +
                 "FROM reservasi r " +
                 "JOIN users u ON r.id_user = u.id_user " +
+                "JOIN tipe_kamar tk ON r.id_tipe_kamar = tk.id_tipe_kamar " +
+                "LEFT JOIN kamar k ON r.id_kamar = k.id_kamar " +
                 "WHERE u.username ILIKE ? OR u.nama ILIKE ? OR COALESCE(u.no_identitas, '') ILIKE ? " +
-                "OR COALESCE(r.no_kamar, '') ILIKE ? OR COALESCE(r.tipe_kamar, '') ILIKE ? " +
+                "OR COALESCE(k.no_kamar, '') ILIKE ? OR tk.nama_tipe ILIKE ? " +
                 "ORDER BY r.id_reservasi DESC";
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -94,7 +98,7 @@ public class ResepsionisDAO {
                         rs.getString("tipe_kamar"),
                         rs.getString("tgl_checkin"),
                         rs.getString("tgl_checkout_rencana"),
-                        rs.getDouble("total_biaya"),
+                        rs.getDouble("total_biaya_kamar"),
                         rs.getString("status_reservasi")
                 ));
             }
@@ -104,15 +108,16 @@ public class ResepsionisDAO {
         return list;
     }
 
-    /** Mengambil daftar nomor kamar yang tersedia & tidak bentrok jadwal sesuai tipe kamar yang dipesan tamu */
+    /** Mengambil nomor kamar yang tersedia & sesuai tipe kamar yang dipesan tamu */
     public List<String> getNomorKamarKosongByTipe(String tipeKamar, String checkIn, String checkOut) {
         List<String> listNoKamar = new ArrayList<>();
         String sql = "SELECT k.no_kamar FROM kamar k " +
-                "WHERE TRIM(k.tipe_kamar) ILIKE TRIM(?) " +
+                "JOIN tipe_kamar tk ON k.id_tipe_kamar = tk.id_tipe_kamar " +
+                "WHERE TRIM(tk.nama_tipe) ILIKE TRIM(?) " +
                 "AND TRIM(k.status_kamar) ILIKE 'Tersedia' " +
                 "AND NOT EXISTS (" +
                 "    SELECT 1 FROM reservasi r " +
-                "    WHERE TRIM(r.no_kamar) = TRIM(k.no_kamar) " +
+                "    WHERE r.id_kamar = k.id_kamar " +
                 "    AND COALESCE(r.status_reservasi, '') NOT ILIKE '%Selesai%' " +
                 "    AND COALESCE(r.status_reservasi, '') NOT ILIKE '%Ditolak%' " +
                 "    AND COALESCE(r.status_reservasi, '') NOT ILIKE '%Dibatalkan%' " +
@@ -136,23 +141,24 @@ public class ResepsionisDAO {
         return listNoKamar;
     }
 
-    /** Proses Check-In: menetapkan nomor kamar pilihan Resepsionis, ubah status reservasi ke 'Check-in', dan kunci kamar jadi 'Terisi' */
+    /** Proses Check-In: menetapkan id_kamar pilihan Resepsionis & ubah status ke 'Check-in' */
     public boolean checkInDanTetapkanKamar(int idReservasi, String noKamarTerpilih) {
-        String sqlRes = "UPDATE reservasi SET no_kamar = ?, status_reservasi = 'Check-in' WHERE id_reservasi = ?";
-        String sqlKam = "UPDATE kamar SET status_kamar = 'Terisi' WHERE TRIM(no_kamar) = TRIM(?)";
+        String sqlGetKamar = "SELECT id_kamar FROM kamar WHERE TRIM(no_kamar) = TRIM(?)";
+        String sqlRes = "UPDATE reservasi SET id_kamar = ?, status_reservasi = 'Check-in' WHERE id_reservasi = ?";
 
-        try (Connection conn = DatabaseConnection.getConnection()) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement psGet = conn.prepareStatement(sqlGetKamar)) {
+            psGet.setString(1, noKamarTerpilih.trim());
+            ResultSet rs = psGet.executeQuery();
+            if (!rs.next()) return false;
+            int idKamar = rs.getInt("id_kamar");
+
             conn.setAutoCommit(false);
-            try (PreparedStatement psRes = conn.prepareStatement(sqlRes);
-                 PreparedStatement psKam = conn.prepareStatement(sqlKam)) {
-
-                psRes.setString(1, noKamarTerpilih.trim());
+            try (PreparedStatement psRes = conn.prepareStatement(sqlRes)) {
+                psRes.setInt(1, idKamar);
                 psRes.setInt(2, idReservasi);
+                // Trigger trg_sync_status_kamar otomatis mengubah status_kamar menjadi 'Terisi'
                 int updated = psRes.executeUpdate();
-
-                psKam.setString(1, noKamarTerpilih.trim());
-                psKam.executeUpdate();
-
                 conn.commit();
                 return updated > 0;
             } catch (Exception ex) {
@@ -175,10 +181,9 @@ public class ResepsionisDAO {
         String sqlCheckUser = "SELECT id_user, username FROM users WHERE no_identitas = ?";
         String sqlCheckUsernameExist = "SELECT 1 FROM users WHERE LOWER(username) = LOWER(?)";
         String sqlInsertUser = "INSERT INTO users (nama, username, password_hash, role, no_identitas) VALUES (?, ?, ?, 'Tamu', ?) RETURNING id_user";
-        String sqlKamarInfo = "SELECT no_kamar, tipe_kamar FROM kamar WHERE id_kamar = ?";
-        String sqlReservasi = "INSERT INTO reservasi (id_user, no_kamar, tipe_kamar, tgl_checkin, tgl_checkout_rencana, total_biaya, denda, status_reservasi) " +
-                "VALUES (?, ?, ?, ?, ?, ?, 0, 'Check-in')";
-        String sqlUpdateKamar = "UPDATE kamar SET status_kamar = 'Terisi' WHERE id_kamar = ?";
+        String sqlKamarInfo = "SELECT k.id_tipe_kamar, tk.harga_per_malam FROM kamar k JOIN tipe_kamar tk ON k.id_tipe_kamar = tk.id_tipe_kamar WHERE k.id_kamar = ?";
+        String sqlReservasi = "INSERT INTO reservasi (id_user, id_tipe_kamar, id_kamar, sumber_booking, tgl_checkin, tgl_checkout_rencana, harga_kamar_deal, status_reservasi) " +
+                "VALUES (?, ?, ?, 'Walk-in', ?, ?, ?, 'Check-in')";
 
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
@@ -228,29 +233,26 @@ public class ResepsionisDAO {
                     }
                 }
 
-                String noKamar = "";
-                String tipeKamar = "";
+                int idTipeKamar = 1;
+                double hargaDeal = 0;
                 try (PreparedStatement psInfo = conn.prepareStatement(sqlKamarInfo)) {
                     psInfo.setInt(1, idKamar);
                     ResultSet rsK = psInfo.executeQuery();
                     if (rsK.next()) {
-                        noKamar = rsK.getString("no_kamar");
-                        tipeKamar = rsK.getString("tipe_kamar");
+                        idTipeKamar = rsK.getInt("id_tipe_kamar");
+                        hargaDeal = rsK.getDouble("harga_per_malam");
                     }
                 }
 
-                try (PreparedStatement psRes = conn.prepareStatement(sqlReservasi);
-                     PreparedStatement psKam = conn.prepareStatement(sqlUpdateKamar)) {
+                try (PreparedStatement psRes = conn.prepareStatement(sqlReservasi)) {
                     psRes.setInt(1, idUser);
-                    psRes.setString(2, noKamar);
-                    psRes.setString(3, tipeKamar);
+                    psRes.setInt(2, idTipeKamar);
+                    psRes.setInt(3, idKamar);
                     psRes.setDate(4, java.sql.Date.valueOf(checkIn));
                     psRes.setDate(5, java.sql.Date.valueOf(checkOut));
-                    psRes.setDouble(6, totalHarga);
+                    psRes.setDouble(6, hargaDeal);
+                    // Trigger trg_sync_status_kamar otomatis mengubah status_kamar menjadi 'Terisi'
                     psRes.executeUpdate();
-
-                    psKam.setInt(1, idKamar);
-                    psKam.executeUpdate();
                 }
 
                 conn.commit();
@@ -267,7 +269,6 @@ public class ResepsionisDAO {
 
     public boolean updateStatusReservasi(int idReservasi, String statusBaru) {
         String sqlRes = "UPDATE reservasi SET status_reservasi = ? WHERE id_reservasi = ?";
-        String sqlKamarTerisi = "UPDATE kamar SET status_kamar = 'Terisi' WHERE TRIM(no_kamar) = (SELECT TRIM(no_kamar) FROM reservasi WHERE id_reservasi = ?)";
 
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
@@ -275,14 +276,6 @@ public class ResepsionisDAO {
                 stmtRes.setString(1, statusBaru);
                 stmtRes.setInt(2, idReservasi);
                 int updated = stmtRes.executeUpdate();
-
-                if (statusBaru.toLowerCase().contains("check-in")) {
-                    try (PreparedStatement stmtKam = conn.prepareStatement(sqlKamarTerisi)) {
-                        stmtKam.setInt(1, idReservasi);
-                        stmtKam.executeUpdate();
-                    }
-                }
-
                 conn.commit();
                 return updated > 0;
             } catch (Exception ex) {
@@ -296,7 +289,7 @@ public class ResepsionisDAO {
     }
 
     public double getTagihanMakanan(int idReservasi) {
-        String sql = "SELECT COALESCE(SUM(subtotal), 0) AS total_fb FROM pesanan_makanan WHERE id_reservasi = ?";
+        String sql = "SELECT COALESCE(SUM(subtotal), 0) AS total_fb FROM pesanan_makanan WHERE id_reservasi = ? AND status_pesanan <> 'Dibatalkan'";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idReservasi);
@@ -315,7 +308,7 @@ public class ResepsionisDAO {
         String sql = "SELECT m.nama_menu, pm.jumlah, pm.subtotal " +
                 "FROM pesanan_makanan pm " +
                 "JOIN menu m ON pm.id_menu = m.id_menu " +
-                "WHERE pm.id_reservasi = ? " +
+                "WHERE pm.id_reservasi = ? AND pm.status_pesanan <> 'Dibatalkan' " +
                 "ORDER BY pm.id_pesanan ASC";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -334,10 +327,34 @@ public class ResepsionisDAO {
         return list;
     }
 
+    /** Simpan denda keterlambatan/kerusakan ke tabel denda_reservasi sesuai skema baru */
+    public void simpanDenda(int idReservasi, double dendaTelat, double dendaKerusakan) {
+        String sql = "INSERT INTO denda_reservasi (id_reservasi, jenis_denda, keterangan, nominal) VALUES (?, ?, ?, ?)";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            if (dendaTelat > 0) {
+                ps.setInt(1, idReservasi);
+                ps.setString(2, "Keterlambatan");
+                ps.setString(3, "Denda keterlambatan check-out");
+                ps.setDouble(4, dendaTelat);
+                ps.executeUpdate();
+            }
+            if (dendaKerusakan > 0) {
+                ps.setInt(1, idReservasi);
+                ps.setString(2, "Kerusakan");
+                ps.setString(3, "Denda kerusakan fasilitas kamar");
+                ps.setDouble(4, dendaKerusakan);
+                ps.executeUpdate();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public boolean prosesCheckOut(int idReservasi, double grandTotal) {
-        String sqlRes = "UPDATE reservasi SET status_reservasi = 'Selesai', total_biaya = ?, tgl_checkout_aktual = CURRENT_TIMESTAMP WHERE id_reservasi = ?";
-        String sqlKamar = "UPDATE kamar SET status_kamar = 'Pemeliharaan' WHERE TRIM(no_kamar) = (SELECT TRIM(no_kamar) FROM reservasi WHERE id_reservasi = ?)";
-        String sqlFB = "UPDATE pesanan_makanan SET status_pesanan = 'Selesai' WHERE id_reservasi = ?";
+        String sqlRes = "UPDATE reservasi SET status_reservasi = 'Selesai', tgl_checkout_aktual = CURRENT_TIMESTAMP WHERE id_reservasi = ?";
+        String sqlKamar = "UPDATE kamar SET status_kamar = 'Pemeliharaan' WHERE id_kamar = (SELECT id_kamar FROM reservasi WHERE id_reservasi = ?)";
+        String sqlFB = "UPDATE pesanan_makanan SET status_pesanan = 'Selesai' WHERE id_reservasi = ? AND status_pesanan <> 'Dibatalkan'";
 
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
@@ -345,10 +362,10 @@ public class ResepsionisDAO {
                  PreparedStatement psKam = conn.prepareStatement(sqlKamar);
                  PreparedStatement psFB = conn.prepareStatement(sqlFB)) {
 
-                psRes.setDouble(1, grandTotal);
-                psRes.setInt(2, idReservasi);
+                psRes.setInt(1, idReservasi);
                 psRes.executeUpdate();
 
+                // Jalankan setelah update reservasi agar override trigger menjadi Pemeliharaan (perlu dibersihkan)
                 psKam.setInt(1, idReservasi);
                 psKam.executeUpdate();
 
