@@ -25,9 +25,8 @@ public class UserDAO {
             if (rs.next()) {
                 String dbPass = rs.getString("password_hash").trim();
                 String role = rs.getString("role").trim();
-                String hashedInput = PasswordUtil.hash(password.trim());
 
-                if (dbPass.equals(hashedInput) || dbPass.equals(password.trim())) {
+                if (PasswordUtil.verify(password.trim(), dbPass)) {
                     return role;
                 }
             }
@@ -49,9 +48,8 @@ public class UserDAO {
 
             if (rs.next()) {
                 String dbPass = rs.getString("password_hash").trim();
-                String hashedInput = PasswordUtil.hash(password.trim());
 
-                if (dbPass.equals(hashedInput) || dbPass.equals(password.trim())) {
+                if (PasswordUtil.verify(password.trim(), dbPass)) {
                     int id = rs.getInt("id_user");
                     String nama = rs.getString("nama");
                     String uname = rs.getString("username");
@@ -129,18 +127,22 @@ public class UserDAO {
     }
 
     public boolean isPasswordExist(String password) {
-        String sql = "SELECT id_user FROM users WHERE password_hash = ? OR password_hash = ?";
+        String sql = "SELECT password_hash FROM users";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
 
             String cleanPass = password.trim();
-            stmt.setString(1, PasswordUtil.hash(cleanPass));
-            stmt.setString(2, cleanPass);
-            return stmt.executeQuery().next();
+            while (rs.next()) {
+                String dbPass = rs.getString("password_hash");
+                if (dbPass != null && PasswordUtil.verify(cleanPass, dbPass.trim())) {
+                    return true;
+                }
+            }
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
         }
+        return false;
     }
 
     public boolean register(String nama, String noIdentitas, String username, String password, String role) {

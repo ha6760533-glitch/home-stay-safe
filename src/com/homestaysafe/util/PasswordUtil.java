@@ -1,63 +1,65 @@
 package com.homestaysafe.util;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Base64;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
-import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
-import java.security.SecureRandom;
-import java.util.Base64;
 
-/**
- * Utility hashing password memakai PBKDF2-HMAC-SHA256 + salt acak (hanya library bawaan Java).
- *
- * Format yang disimpan di kolom users.password_hash:
- *     pbkdf2$<iterasi>$<salt base64>$<hash base64>
- *
- * Password asli tidak pernah disimpan; saat login password yang diketik di-hash ulang
- * dengan salt yang sama lalu dibandingkan.
- */
-public final class PasswordUtil {
+public class PasswordUtil {
 
-    private static final String ALGORITMA = "PBKDF2WithHmacSHA256";
-    private static final int ITERASI = 65_536;
-    private static final int PANJANG_SALT = 16;   // byte
-    private static final int PANJANG_HASH = 256;  // bit
-    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final String ALGORITHM = "PBKDF2WithHmacSHA256";
+    private static final int ITERATIONS = 65536;
+    private static final int KEY_LENGTH = 256;
+    private static final int SALT_LENGTH = 16;
 
-    private PasswordUtil() {}
+    public static String hash(String plainPassword) {
+        try {
+            byte[] salt = new byte[SALT_LENGTH];
+            new SecureRandom().nextBytes(salt);
 
-    /** Menghasilkan string hash baru (salt acak setiap dipanggil). */
-    public static String hash(String password) {
-        byte[] salt = new byte[PANJANG_SALT];
-        RANDOM.nextBytes(salt);
-        byte[] hash = pbkdf2(password.toCharArray(), salt, ITERASI);
-        return "pbkdf2$" + ITERASI + "$"
-                + Base64.getEncoder().encodeToString(salt) + "$"
-                + Base64.getEncoder().encodeToString(hash);
+            byte[] hash = pbkdf2(plainPassword.toCharArray(), salt, ITERATIONS, KEY_LENGTH);
+            return "pbkdf2$" + ITERATIONS + "$" +
+                    Base64.getEncoder().encodeToString(salt) + "$" +
+                    Base64.getEncoder().encodeToString(hash);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new RuntimeException("Gagal melakukan hashing password", e);
+        }
     }
 
-    /** Memeriksa apakah password cocok dengan string hash yang tersimpan di database. */
-    public static boolean verify(String password, String tersimpan) {
-        if (password == null || tersimpan == null) return false;
-        String[] bagian = tersimpan.split("\\$");
-        if (bagian.length != 4 || !bagian[0].equals("pbkdf2")) return false;
-        try {
-            int iterasi = Integer.parseInt(bagian[1]);
-            byte[] salt = Base64.getDecoder().decode(bagian[2]);
-            byte[] hashAsli = Base64.getDecoder().decode(bagian[3]);
-            byte[] hashInput = pbkdf2(password.toCharArray(), salt, iterasi);
-            return MessageDigest.isEqual(hashAsli, hashInput); // perbandingan waktu-konstan
-        } catch (IllegalArgumentException e) {
+    public static boolean verify(String plainPassword, String storedHash) {
+        if (plainPassword == null || storedHash == null || storedHash.isEmpty()) {
             return false;
         }
+
+        // Mendukung format PBKDF2: pbkdf2$<iterations>$<salt>$<hash>
+        if (storedHash.startsWith("pbkdf2$")) {
+            String[] parts = storedHash.split("\\$");
+            if (parts.length != 4) {
+                return false;
+            }
+            try {
+                int iterations = Integer.parseInt(parts[1]);
+                byte[] salt = Base64.getDecoder().decode(parts[2]);
+                byte[] expectedHash = Base64.getDecoder().decode(parts[3]);
+
+                byte[] actualHash = pbkdf2(plainPassword.toCharArray(), salt, iterations, expectedHash.length * 8);
+                return MessageDigest.isEqual(expectedHash, actualHash);
+            } catch (IllegalArgumentException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+                return false;
+            }
+        }
+
+        // Fallback jika masih ada akun lama di DB yang belum di-hash
+        return storedHash.equals(plainPassword);
     }
 
-    private static byte[] pbkdf2(char[] password, byte[] salt, int iterasi) {
-        try {
-            PBEKeySpec spec = new PBEKeySpec(password, salt, iterasi, PANJANG_HASH);
-            return SecretKeyFactory.getInstance(ALGORITMA).generateSecret(spec).getEncoded();
-        } catch (GeneralSecurityException e) {
-            throw new IllegalStateException("Algoritma hashing tidak tersedia", e);
-        }
+    private static byte[] pbkdf2(char[] password, byte[] salt, int iterations, int keyLength)
+            throws NoSuchAlgorithmException, InvalidKeySpecException {
+        PBEKeySpec spec = new PBEKeySpec(password, salt, iterations, keyLength);
+        SecretKeyFactory skf = SecretKeyFactory.getInstance(ALGORITHM);
+        return skf.generateSecret(spec).getEncoded();
     }
 }
