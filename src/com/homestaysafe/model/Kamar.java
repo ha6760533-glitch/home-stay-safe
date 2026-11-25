@@ -1,12 +1,10 @@
 package com.homestaysafe.model;
 
-/**
- * Abstract class Kamar -> Abstraction + base Inheritance.
- * Mendukung 5 tipe kamar pada tabel tipe_kamar:
- * Standard, Deluxe, Executive, Junior Suite, dan Presidential Suite.
- */
+// ABSTRACTION: class abstract Kamar
+// INHERITANCE: parent bagi StandardRoom, DeluxeRoom, ExecutiveRoom, SuiteRoom
 public abstract class Kamar {
 
+    // ENCAPSULATION
     private final int idKamar;
     private final int idTipeKamar;
     private final String noKamar;
@@ -26,7 +24,6 @@ public abstract class Kamar {
         this.deskripsi = deskripsi;
     }
 
-    // ===== Encapsulation =====
     public int getIdKamar() { return idKamar; }
     public int getIdTipeKamar() { return idTipeKamar; }
     public String getNoKamar() { return noKamar; }
@@ -35,11 +32,10 @@ public abstract class Kamar {
     public String getStatusKamar() { return statusKamar; }
     public String getDeskripsi() { return deskripsi; }
 
-    // ===== Abstraction + Polymorphism =====
+    // ABSTRACTION + POLYMORPHISM: tiap tipe kamar override sendiri
     public abstract String getDefaultFasilitas();
     public abstract int getKapasitas();
 
-    /** Mengutamakan deskripsi dari tabel tipe_kamar, fallback ke fasilitas default subclass. */
     public String getFasilitas() {
         return (deskripsi != null && !deskripsi.trim().isEmpty())
                 ? deskripsi.trim()
@@ -54,12 +50,11 @@ public abstract class Kamar {
         return tipeKamar + " No. " + noKamar + " | " + getKapasitas() + " orang | " + getFasilitas();
     }
 
-    /** Factory overload lama (kompatibilitas) */
+    // POLYMORPHISM (Factory): return subclass berbeda sesuai tipe
     public static Kamar buat(int id, String no, String tipe, double harga, String status) {
         return buat(id, 0, no, tipe, harga, status, null);
     }
 
-    /** Factory lengkap sesuai tabel kamar JOIN tipe_kamar */
     public static Kamar buat(int id, int idTipe, String no, String tipe, double harga, String status, String deskripsi) {
         String t = tipe == null ? "" : tipe.trim();
         if (t.equalsIgnoreCase("Presidential Suite") || t.equalsIgnoreCase("Junior Suite") || t.equalsIgnoreCase("Suite")) {

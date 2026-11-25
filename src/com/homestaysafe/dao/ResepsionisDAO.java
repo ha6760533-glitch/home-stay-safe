@@ -210,7 +210,7 @@ public class ResepsionisDAO {
                     if (rs.next()) {
                         idUser = rs.getInt("id_user");
                         usernameTamu = rs.getString("username");
-                        passwordTamu = "(Password akun terdaftar sebelumnya)";
+                        passwordTamu = "(Password akun lama)";
                     }
                 }
 

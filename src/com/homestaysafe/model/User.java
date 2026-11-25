@@ -2,12 +2,10 @@ package com.homestaysafe.model;
 
 import javax.swing.JFrame;
 
-/**
- * Abstract class → Abstraction + base Inheritance.
- * Setiap subclass (Tamu, Resepsionis, Manager) menentukan sendiri role,
- * label tampilan, dan dashboard yang dibuka → Polymorphism.
- */
+// ABSTRACTION: class abstract tidak bisa diinstansiasi langsung
+// INHERITANCE: menjadi parent bagi Tamu, Resepsionis, Manager
 public abstract class User {
+    // ENCAPSULATION: atribut private, diakses lewat getter/setter
     private final int idUser;
     private String nama;
     private final String username;
@@ -20,22 +18,15 @@ public abstract class User {
         this.noIdentitas = noIdentitas;
     }
 
-    // Encapsulation
     public int getIdUser() { return idUser; }
     public String getNama() { return nama; }
     public String getUsername() { return username; }
     public String getNoIdentitas() { return noIdentitas; }
-
     public void setNama(String nama) { this.nama = nama; }
     public void setNoIdentitas(String noIdentitas) { this.noIdentitas = noIdentitas; }
 
-    // Abstraction + Polymorphism (di-override subclass)
+    // ABSTRACTION + POLYMORPHISM: wajib di-override oleh subclass
     public abstract String getRole();
     public abstract String getDisplayRole();
-
-    /**
-     * Polymorphism: tiap role membuat dashboard-nya sendiri.
-     * Pemanggil (LoginFrame) tidak perlu if/else berdasarkan role.
-     */
     public abstract JFrame createDashboard();
 }

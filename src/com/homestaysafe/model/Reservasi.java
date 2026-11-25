@@ -6,11 +6,13 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 
+// POLYMORPHISM via INTERFACE: Reservasi implements Cetakable & Dendable
 public class Reservasi implements Cetakable, Dendable {
 
     public static final double TARIF_DENDA_PER_JAM = 50000.0;
     public static final LocalTime JAM_BATAS_CHECKOUT = LocalTime.of(12, 0);
 
+    // ENCAPSULATION
     private int idReservasi;
     private int idUser;
     private int idTipeKamar;
@@ -23,15 +25,14 @@ public class Reservasi implements Cetakable, Dendable {
     private LocalDate tglCheckoutRencana;
     private LocalDateTime tglCheckoutAktual;
     private double hargaKamarDeal;
-    private double totalBiaya;        // total biaya sewa kamar (durasi * hargaKamarDeal)
-    private double denda;             // denda keterlambatan
-    private double dendaKerusakan;    // denda kerusakan fasilitas
-    private double totalMakanan;      // tagihan F&B
+    private double totalBiaya;
+    private double denda;
+    private double dendaKerusakan;
+    private double totalMakanan;
     private String statusReservasi;
 
     public Reservasi() {}
 
-    // ===== Encapsulation =====
     public int getIdReservasi() { return idReservasi; }
     public void setIdReservasi(int idReservasi) { this.idReservasi = idReservasi; }
     public int getIdUser() { return idUser; }
@@ -83,6 +84,7 @@ public class Reservasi implements Cetakable, Dendable {
         return Math.max(1, (long) Math.ceil(menitTelat / 60.0));
     }
 
+    // POLYMORPHISM: implementasi Dendable
     @Override
     public double hitungDenda(LocalDateTime waktuCheckoutAktual) {
         return hitungJamTelat(waktuCheckoutAktual) * TARIF_DENDA_PER_JAM;
@@ -96,6 +98,7 @@ public class Reservasi implements Cetakable, Dendable {
         return totalBiaya + totalMakanan + getTotalDenda();
     }
 
+    // POLYMORPHISM: implementasi Cetakable
     @Override
     public String cetakNota() {
         return ""

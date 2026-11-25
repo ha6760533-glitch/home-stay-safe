@@ -1,6 +1,6 @@
 package com.homestaysafe.model;
 
-/** Kamar tipe Deluxe (Inheritance dari {@link Kamar}). */
+// INHERITANCE: DeluxeRoom extends Kamar
 public class DeluxeRoom extends Kamar {
     public DeluxeRoom(int id, String no, String tipe, double harga, String status) {
         this(id, 2, no, tipe, harga, status, null);
@@ -10,6 +10,12 @@ public class DeluxeRoom extends Kamar {
         super(id, idTipe, no, tipe, harga, status, deskripsi);
     }
 
-    @Override public String getDefaultFasilitas() { return "Kamar luas dengan balkon kota, minibar, dan sarapan 2 orang"; }
-    @Override public int getKapasitas() { return 2; }
+    // POLYMORPHISM
+    @Override
+    public String getDefaultFasilitas() {
+        return "Kamar luas dengan balkon kota, minibar, dan sarapan 2 orang";
+    }
+
+    @Override
+    public int getKapasitas() { return 2; }
 }

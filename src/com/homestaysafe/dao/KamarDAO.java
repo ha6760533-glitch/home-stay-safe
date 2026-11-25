@@ -50,7 +50,6 @@ public class KamarDAO {
 
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement()) {
-            // Trigger trg_sync_status_kamar di DB otomatis mengubah status kamar menjadi Tersedia
             stmt.executeUpdate(sqlUpdateReservasiSelesai);
         } catch (Exception e) {
             e.printStackTrace();
@@ -77,7 +76,6 @@ public class KamarDAO {
         return listKamar;
     }
 
-    /** Ringkasan per Tipe Kamar (Standard, Deluxe, Executive, Junior Suite, Presidential Suite) */
     public List<TipeKamarSummary> getRingkasanTipeKamar() {
         getAllKamar();
         List<TipeKamarSummary> list = new ArrayList<>();
@@ -109,7 +107,6 @@ public class KamarDAO {
         return list;
     }
 
-    /** Mengecek ketersediaan unit pada tipe kamar tertentu untuk rentang tanggal */
     public boolean isTipeKamarTersediaUntukTanggal(String tipeKamar, String checkIn, String checkOut) {
         String sqlTotalAktif = "SELECT COUNT(*) FROM kamar k " +
                 "JOIN tipe_kamar tk ON k.id_tipe_kamar = tk.id_tipe_kamar " +

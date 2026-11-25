@@ -1,6 +1,6 @@
 package com.homestaysafe.model;
 
-/** Kamar tipe Suite (Junior Suite & Presidential Suite). */
+// INHERITANCE: SuiteRoom extends Kamar
 public class SuiteRoom extends Kamar {
     public SuiteRoom(int id, String no, String tipe, double harga, String status) {
         this(id, 4, no, tipe, harga, status, null);
@@ -10,6 +10,7 @@ public class SuiteRoom extends Kamar {
         super(id, idTipe, no, tipe, harga, status, deskripsi);
     }
 
+    // POLYMORPHISM
     @Override
     public String getDefaultFasilitas() {
         if ("Presidential Suite".equalsIgnoreCase(getTipeKamar())) {

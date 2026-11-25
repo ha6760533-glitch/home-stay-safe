@@ -132,7 +132,7 @@ public class OfflineBookingPanel extends JPanel {
         ));
         JLabel lblInfo = new JLabel("<html><body style='width:310px;color:#854d0e;font-size:11px;'>" +
                 "<b>Info Akun Tamu Walk-In:</b><br>" +
-                "Sistem otomatis membuatkan akun akses Portal Tamu (<i>katapertama + 123</i>) agar tamu dapat memesan layanan makanan (F&B) langsung dari kamar.</body></html>");
+                "Sistem otomatis membuatkan akun akses Portal Tamu (<i>katapertama + 123</i>) bagi tamu baru, atau menghubungkan ke akun lama jika NIK dan nama sesuai.</body></html>");
         infoBox.add(lblInfo, BorderLayout.CENTER);
 
         JButton btnSimpan = UIHelper.goldButton("Proses & Simpan Pesanan Walk-In");
@@ -193,14 +193,14 @@ public class OfflineBookingPanel extends JPanel {
                 return;
             }
 
-            // Cek apakah NIK sudah terdaftar di database users
+            // Validasi kecocokan Nama + NIK
             UserDAO userDAO = new UserDAO();
-            if (userDAO.isNoIdentitasExist(nik)) {
+            String namaTerdaftar = userDAO.getNamaByNoIdentitas(nik);
+            if (namaTerdaftar != null && !namaTerdaftar.trim().equalsIgnoreCase(nama)) {
                 JOptionPane.showMessageDialog(this,
-                        "No. Identitas (NIK) " + nik + " sudah terdaftar di sistem!\n" +
-                                "Pendaftaran Walk-In tidak dapat menggunakan NIK yang sudah memiliki akun.\n" +
-                                "Silakan gunakan NIK baru atau minta tamu melakukan pemesanan melalui akun yang sudah ada.",
-                        "NIK Sudah Terdaftar", JOptionPane.WARNING_MESSAGE);
+                        "No. Identitas (NIK) " + nik + " sudah terdaftar atas nama \"" + namaTerdaftar + "\"!\n" +
+                                "NIK tidak dapat digunakan untuk tamu dengan nama berbeda.",
+                        "Konflik Data Identitas", JOptionPane.WARNING_MESSAGE);
                 txtNIK.requestFocus();
                 txtNIK.selectAll();
                 return;
@@ -250,7 +250,7 @@ public class OfflineBookingPanel extends JPanel {
 
     private void showKartuAksesDialog(String nama, String noKamar, String username, String password) {
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Kartu Akses Tamu Walk-In", Dialog.ModalityType.APPLICATION_MODAL);
-        dialog.setSize(430, 350);
+        dialog.setSize(460, 355);
         dialog.setLocationRelativeTo(this);
         dialog.setResizable(false);
 
@@ -274,11 +274,14 @@ public class OfflineBookingPanel extends JPanel {
         vUser.setFont(new Font("Segoe UI", Font.BOLD, 14));
         vUser.setForeground(COLOR_NAVY);
 
+        boolean isAkunLama = password != null && password.toLowerCase().contains("terdaftar");
+        String tampilPass = isAkunLama ? "Password Akun Lama" : password;
+
         JLabel lPass = new JLabel("Password Akun:");
         lPass.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        JLabel vPass = new JLabel(password, SwingConstants.RIGHT);
-        vPass.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        vPass.setForeground(new Color(5, 150, 105));
+        JLabel vPass = new JLabel(tampilPass, SwingConstants.RIGHT);
+        vPass.setFont(new Font("Segoe UI", isAkunLama ? Font.ITALIC : Font.BOLD, isAkunLama ? 12 : 14));
+        vPass.setForeground(isAkunLama ? new Color(37, 99, 235) : new Color(5, 150, 105));
 
         JLabel lInfo = new JLabel("Akses Fitur:");
         lInfo.setFont(new Font("Segoe UI", Font.PLAIN, 12));

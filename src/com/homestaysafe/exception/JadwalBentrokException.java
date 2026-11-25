@@ -1,8 +1,6 @@
 package com.homestaysafe.exception;
 
-/**
- * Checked exception yang dilempar saat kamar sudah dipesan pada rentang tanggal yang diminta.
- */
+// Custom Exception (bagian OOP + error handling)
 public class JadwalBentrokException extends Exception {
     private final String noKamar;
     private final String checkIn;

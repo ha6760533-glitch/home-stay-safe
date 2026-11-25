@@ -51,7 +51,6 @@ public class UserDAO {
                 String dbPass = rs.getString("password_hash").trim();
                 String hashedInput = PasswordUtil.hash(password.trim());
 
-                // Cocokkan baik hasil hash maupun password plain-text akun lama di DB
                 if (dbPass.equals(hashedInput) || dbPass.equals(password.trim())) {
                     int id = rs.getInt("id_user");
                     String nama = rs.getString("nama");
@@ -98,6 +97,22 @@ public class UserDAO {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public String getNamaByNoIdentitas(String noIdentitas) {
+        String sql = "SELECT nama FROM users WHERE TRIM(no_identitas) = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, noIdentitas.trim());
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getString("nama");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public boolean isUsernameExist(String username) {
