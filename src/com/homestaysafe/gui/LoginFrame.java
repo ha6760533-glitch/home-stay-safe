@@ -28,33 +28,39 @@ public class LoginFrame extends JFrame {
         userDAO = new UserDAO();
 
         setTitle("HomestaySafe - Login System");
-        setSize(490, 540);
+        setSize(490, 610);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(true);
 
         JPanel outerPanel = new JPanel(new GridBagLayout());
         outerPanel.setBackground(COLOR_BG);
-        outerPanel.setBorder(new EmptyBorder(25, 25, 25, 25));
+        outerPanel.setBorder(new EmptyBorder(20, 25, 20, 25));
 
-        JPanel cardPanel = UIHelper.createRoundedCard(22, 30, 34);
+        JPanel cardPanel = UIHelper.createRoundedCard(22, 26, 34);
         cardPanel.setLayout(new GridBagLayout());
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 6, 5, 6);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
+        JLabel lblLogo = new JLabel(UIHelper.getLogoIcon(64, 70), SwingConstants.CENTER);
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+        gbc.insets = new Insets(0, 6, 6, 6);
+        cardPanel.add(lblLogo, gbc);
+
         JLabel lblHeaderTag = new JLabel("HOMESTAYSAFE RESORT & HOTEL", SwingConstants.CENTER);
         lblHeaderTag.setFont(new Font("Segoe UI", Font.BOLD, 11));
         lblHeaderTag.setForeground(COLOR_GOLD);
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 2;
+        gbc.insets = new Insets(2, 6, 2, 6);
         cardPanel.add(lblHeaderTag, gbc);
 
         JLabel lblTitle = new JLabel("Masuk ke Akun", SwingConstants.CENTER);
         lblTitle.setFont(new Font("Serif", Font.BOLD, 25));
         lblTitle.setForeground(COLOR_NAVY);
-        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 2;
-        gbc.insets = new Insets(0, 6, 16, 6);
+        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 2;
+        gbc.insets = new Insets(0, 6, 14, 6);
         cardPanel.add(lblTitle, gbc);
 
         gbc.insets = new Insets(4, 6, 4, 6);
@@ -62,26 +68,26 @@ public class LoginFrame extends JFrame {
         JLabel lblUser = new JLabel("USERNAME");
         lblUser.setFont(new Font("Segoe UI", Font.BOLD, 11));
         lblUser.setForeground(COLOR_NAVY);
-        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 2;
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
         cardPanel.add(lblUser, gbc);
 
         txtUsername = new JTextField();
         txtUsername.setPreferredSize(new Dimension(300, 40));
         UIHelper.styleField(txtUsername);
-        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
+        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2;
         cardPanel.add(txtUsername, gbc);
 
         JLabel lblPass = new JLabel("PASSWORD");
         lblPass.setFont(new Font("Segoe UI", Font.BOLD, 11));
         lblPass.setForeground(COLOR_NAVY);
-        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2;
+        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2;
         cardPanel.add(lblPass, gbc);
 
         txtPassword = new JPasswordField();
         txtPassword.setPreferredSize(new Dimension(250, 40));
         txtPassword.setEchoChar('•');
         UIHelper.styleField(txtPassword);
-        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 1;
+        gbc.gridx = 0; gbc.gridy = 6; gbc.gridwidth = 1;
         gbc.weightx = 1.0;
         cardPanel.add(txtPassword, gbc);
 
@@ -94,7 +100,7 @@ public class LoginFrame extends JFrame {
             }
             btnTogglePass.repaint();
         });
-        gbc.gridx = 1; gbc.gridy = 5; gbc.gridwidth = 1;
+        gbc.gridx = 1; gbc.gridy = 6; gbc.gridwidth = 1;
         gbc.weightx = 0.0;
         cardPanel.add(btnTogglePass, gbc);
 
@@ -102,8 +108,8 @@ public class LoginFrame extends JFrame {
         btnLogin.setPreferredSize(new Dimension(300, 46));
         btnLogin.addActionListener(e -> processLogin());
 
-        gbc.gridx = 0; gbc.gridy = 6; gbc.gridwidth = 2;
-        gbc.insets = new Insets(18, 6, 4, 6);
+        gbc.gridx = 0; gbc.gridy = 7; gbc.gridwidth = 2;
+        gbc.insets = new Insets(16, 6, 4, 6);
         cardPanel.add(btnLogin, gbc);
 
         btnRegister = new JButton("Belum Punya Akun Tamu? Daftar di Sini");
@@ -118,7 +124,7 @@ public class LoginFrame extends JFrame {
             new RegisterFrame().setVisible(true);
         });
 
-        gbc.gridx = 0; gbc.gridy = 7; gbc.gridwidth = 2;
+        gbc.gridx = 0; gbc.gridy = 8; gbc.gridwidth = 2;
         gbc.insets = new Insets(4, 6, 2, 6);
         cardPanel.add(btnRegister, gbc);
 
@@ -134,7 +140,7 @@ public class LoginFrame extends JFrame {
             new DashboardFrame().setVisible(true);
         });
 
-        gbc.gridx = 0; gbc.gridy = 8; gbc.gridwidth = 2;
+        gbc.gridx = 0; gbc.gridy = 9; gbc.gridwidth = 2;
         cardPanel.add(btnBack, gbc);
 
         outerPanel.add(cardPanel);

@@ -106,9 +106,16 @@ public abstract class BaseDashboardFrame extends JFrame {
         header.setPreferredSize(new Dimension(1240, 70));
         header.setBorder(new EmptyBorder(0, 28, 0, 28));
 
+        JPanel brandPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 14));
+        brandPanel.setOpaque(false);
+
+        JLabel lblLogo = new JLabel(UIHelper.getLogoIcon(38, 42));
         JLabel lblBrand = new JLabel(getBrandText());
         lblBrand.setFont(new Font("Serif", Font.BOLD, 22));
         lblBrand.setForeground(COLOR_GOLD);
+
+        brandPanel.add(lblLogo);
+        brandPanel.add(lblBrand);
 
         JPanel rightHeader = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 14));
         rightHeader.setOpaque(false);
@@ -117,7 +124,6 @@ public abstract class BaseDashboardFrame extends JFrame {
         lblUser.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lblUser.setForeground(Color.WHITE);
 
-        // Tombol Profil Rounded
         JButton btnProfile = new JButton(new UserAvatarIcon()) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -141,7 +147,6 @@ public abstract class BaseDashboardFrame extends JFrame {
         btnProfile.setToolTipText(getProfileTooltip());
         btnProfile.addActionListener(e -> showProfileDialog());
 
-        // Tombol Menu Sidebar (Padding dikecilkan supaya ikon ≡ tidak terpotong menjadi ...)
         JButton btnToggleSidebar = UIHelper.createRoundedButton("≡",
                 COLOR_GOLD, UIHelper.COLOR_GOLD_HOVER, UIHelper.COLOR_GOLD_PRESS, Color.WHITE, 14, 20);
         btnToggleSidebar.setBorder(new EmptyBorder(0, 0, 2, 0));
@@ -153,7 +158,7 @@ public abstract class BaseDashboardFrame extends JFrame {
         rightHeader.add(btnProfile);
         rightHeader.add(btnToggleSidebar);
 
-        header.add(lblBrand, BorderLayout.WEST);
+        header.add(brandPanel, BorderLayout.WEST);
         header.add(rightHeader, BorderLayout.EAST);
         return header;
     }

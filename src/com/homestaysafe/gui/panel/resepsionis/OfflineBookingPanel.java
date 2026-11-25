@@ -2,6 +2,7 @@ package com.homestaysafe.gui.panel.resepsionis;
 
 import com.homestaysafe.util.UIHelper;
 import com.homestaysafe.dao.KamarDAO;
+import com.homestaysafe.dao.UserDAO;
 import com.homestaysafe.model.Kamar;
 import com.homestaysafe.dao.ResepsionisDAO;
 import com.homestaysafe.exception.JadwalBentrokException;
@@ -189,6 +190,19 @@ public class OfflineBookingPanel extends JPanel {
             if (!nik.matches("\\d{16}")) {
                 JOptionPane.showMessageDialog(this, "No. Identitas (NIK) wajib tepat 16 digit angka!", "Validasi NIK Gagal", JOptionPane.WARNING_MESSAGE);
                 txtNIK.requestFocus();
+                return;
+            }
+
+            // Cek apakah NIK sudah terdaftar di database users
+            UserDAO userDAO = new UserDAO();
+            if (userDAO.isNoIdentitasExist(nik)) {
+                JOptionPane.showMessageDialog(this,
+                        "No. Identitas (NIK) " + nik + " sudah terdaftar di sistem!\n" +
+                                "Pendaftaran Walk-In tidak dapat menggunakan NIK yang sudah memiliki akun.\n" +
+                                "Silakan gunakan NIK baru atau minta tamu melakukan pemesanan melalui akun yang sudah ada.",
+                        "NIK Sudah Terdaftar", JOptionPane.WARNING_MESSAGE);
+                txtNIK.requestFocus();
+                txtNIK.selectAll();
                 return;
             }
 

@@ -51,46 +51,62 @@ public class LihatKamarPanel extends JPanel {
         for (Map.Entry<String, Kamar> entry : perwakilanTipe.entrySet()) {
             String tipe = entry.getKey();
             Kamar k = entry.getValue();
-            boolean isAvailable = jumlahTersedia.getOrDefault(tipe, 0) > 0;
+            int unitReady = jumlahTersedia.getOrDefault(tipe, 0);
+            boolean isAvailable = unitReady > 0;
 
-            JPanel card = UIHelper.createRoundedCard(18, 18, 18);
-            card.setLayout(new BorderLayout(10, 10));
+            JPanel card = UIHelper.createRoundedCard(18, 16, 16);
+            card.setLayout(new BorderLayout(0, 12));
 
-            JPanel topCard = new JPanel(new BorderLayout());
-            topCard.setOpaque(false);
+            // Foto Tipe Kamar di Bagian Atas Card
+            JLabel lblFoto = new JLabel(UIHelper.getKamarImageIcon(tipe, 310, 155, 14), SwingConstants.CENTER);
+            lblFoto.setPreferredSize(new Dimension(310, 155));
+
+            JPanel topInfo = new JPanel(new BorderLayout());
+            topInfo.setOpaque(false);
 
             JLabel lblTipe = new JLabel(tipe);
             lblTipe.setFont(new Font("Segoe UI", Font.BOLD, 17));
             lblTipe.setForeground(COLOR_NAVY);
 
-            JLabel lblStatus = new JLabel(isAvailable ? "● TERSEDIA" : "● PENUH");
+            JLabel lblStatus = new JLabel(isAvailable ? "● TERSEDIA (" + unitReady + ")" : "● PENUH");
             lblStatus.setFont(new Font("Segoe UI", Font.BOLD, 11));
             lblStatus.setForeground(isAvailable ? new Color(16, 185, 129) : new Color(239, 68, 68));
 
-            topCard.add(lblTipe, BorderLayout.WEST);
-            topCard.add(lblStatus, BorderLayout.EAST);
+            topInfo.add(lblTipe, BorderLayout.WEST);
+            topInfo.add(lblStatus, BorderLayout.EAST);
+
+            JPanel northCard = new JPanel(new BorderLayout(0, 10));
+            northCard.setOpaque(false);
+            northCard.add(lblFoto, BorderLayout.NORTH);
+            northCard.add(topInfo, BorderLayout.SOUTH);
 
             String fasilitas = k.getFasilitas();
 
-            JPanel midCard = new JPanel(new GridLayout(3, 1, 4, 6));
+            JPanel midCard = new JPanel();
+            midCard.setLayout(new BoxLayout(midCard, BoxLayout.Y_AXIS));
             midCard.setOpaque(false);
 
-            JLabel lblFasilitasTitle = new JLabel("Fasilitas Utama:");
+            JLabel lblFasilitasTitle = new JLabel("Kapasitas " + k.getKapasitas() + " Orang • Fasilitas Utama:");
             lblFasilitasTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
             lblFasilitasTitle.setForeground(new Color(100, 116, 139));
+            lblFasilitasTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-            JLabel lblFasilitas = new JLabel("<html><body style='width: 180px;'>" + fasilitas + "</body></html>");
+            JLabel lblFasilitas = new JLabel("<html><body style='width: 255px;'>" + fasilitas + "</body></html>");
             lblFasilitas.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            lblFasilitas.setForeground(new Color(51, 65, 85));
+            lblFasilitas.setAlignmentX(Component.LEFT_ALIGNMENT);
+            lblFasilitas.setBorder(new EmptyBorder(4, 0, 8, 0));
 
             JLabel lblHarga = new JLabel(String.format("Rp %,.0f / malam", k.getHargaPerMalam()));
             lblHarga.setFont(new Font("Segoe UI", Font.BOLD, 15));
             lblHarga.setForeground(COLOR_GOLD);
+            lblHarga.setAlignmentX(Component.LEFT_ALIGNMENT);
 
             midCard.add(lblFasilitasTitle);
             midCard.add(lblFasilitas);
             midCard.add(lblHarga);
 
-            card.add(topCard, BorderLayout.NORTH);
+            card.add(northCard, BorderLayout.NORTH);
             card.add(midCard, BorderLayout.CENTER);
 
             gridPanel.add(card);
@@ -101,7 +117,7 @@ public class LihatKamarPanel extends JPanel {
         JScrollPane scrollPane = new JScrollPane(mainContainer);
         scrollPane.setBorder(null);
         scrollPane.getViewport().setBackground(COLOR_BG);
-        scrollPane.getVerticalScrollBar().setUnitIncrement(12);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(14);
 
         add(scrollPane, BorderLayout.CENTER);
     }

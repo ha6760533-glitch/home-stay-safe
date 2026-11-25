@@ -96,8 +96,8 @@ public class ManajerDAO {
 
         String sql = "SELECT " + formatSql + " AS periode, " +
                 "COUNT(*) AS jml_transaksi, " +
-                "COALESCE(SUM(total_biaya), 0) AS total_omzet " +
-                "FROM reservasi " +
+                "COALESCE(SUM(grand_total_pemasukan), 0) AS total_omzet " +
+                "FROM v_laporan_pemasukan " +
                 "WHERE status_reservasi IN ('Disetujui', 'Check-in', 'Selesai') " +
                 "GROUP BY periode " +
                 "ORDER BY periode ASC";
@@ -124,20 +124,21 @@ public class ManajerDAO {
         String kondisiWaktu = "";
 
         if ("7 Hari Terakhir".equalsIgnoreCase(filterWaktu)) {
-            kondisiWaktu = " AND r.tgl_checkin >= CURRENT_DATE - INTERVAL '7 days'";
+            kondisiWaktu = " AND v.tgl_checkin >= CURRENT_DATE - INTERVAL '7 days'";
         } else if ("Bulan Ini".equalsIgnoreCase(filterWaktu)) {
-            kondisiWaktu = " AND DATE_TRUNC('month', r.tgl_checkin) = DATE_TRUNC('month', CURRENT_DATE)";
+            kondisiWaktu = " AND DATE_TRUNC('month', v.tgl_checkin) = DATE_TRUNC('month', CURRENT_DATE)";
         } else if ("Tahun Ini".equalsIgnoreCase(filterWaktu)) {
-            kondisiWaktu = " AND DATE_TRUNC('year', r.tgl_checkin) = DATE_TRUNC('year', CURRENT_DATE)";
+            kondisiWaktu = " AND DATE_TRUNC('year', v.tgl_checkin) = DATE_TRUNC('year', CURRENT_DATE)";
         }
 
-        String sql = "SELECT k.no_kamar, k.tipe_kamar, " +
-                "COUNT(r.id_reservasi) AS frekuensi, " +
-                "COALESCE(SUM(r.total_biaya), 0) AS omzet " +
+        String sql = "SELECT k.no_kamar, tk.nama_tipe AS tipe_kamar, " +
+                "COUNT(v.id_reservasi) AS frekuensi, " +
+                "COALESCE(SUM(v.total_biaya_kamar), 0) AS omzet " +
                 "FROM kamar k " +
-                "LEFT JOIN reservasi r ON TRIM(k.no_kamar) = TRIM(r.no_kamar) " +
-                "AND r.status_reservasi NOT IN ('Ditolak', 'Dibatalkan') " + kondisiWaktu + " " +
-                "GROUP BY k.no_kamar, k.tipe_kamar " +
+                "JOIN tipe_kamar tk ON k.id_tipe_kamar = tk.id_tipe_kamar " +
+                "LEFT JOIN v_laporan_pemasukan v ON TRIM(k.no_kamar) = TRIM(v.no_kamar) " +
+                "AND v.status_reservasi NOT IN ('Ditolak', 'Dibatalkan') " + kondisiWaktu + " " +
+                "GROUP BY k.no_kamar, tk.nama_tipe " +
                 "ORDER BY frekuensi DESC, omzet DESC, k.no_kamar ASC";
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -173,17 +174,16 @@ public class ManajerDAO {
             return list;
         }
 
-        String sql = "SELECT r.id_reservasi, u.nama, COALESCE(u.no_identitas, '-') AS no_identitas, " +
-                "COALESCE(r.no_kamar, '-') AS no_kamar, COALESCE(r.tipe_kamar, '-') AS tipe_kamar, " +
-                "r.tgl_checkin, r.tgl_checkout_rencana, COALESCE(r.denda, 0) AS denda, " +
-                "COALESCE(r.total_biaya, 0) AS total_biaya, r.status_reservasi " +
-                "FROM reservasi r " +
-                "JOIN users u ON r.id_user = u.id_user " +
-                "WHERE r.tgl_checkin BETWEEN ? AND ? " +
-                "AND (u.nama ILIKE ? OR COALESCE(u.no_identitas, '') ILIKE ? " +
-                "     OR COALESCE(r.no_kamar, '') ILIKE ? OR COALESCE(r.tipe_kamar, '') ILIKE ? " +
-                "     OR r.status_reservasi ILIKE ? OR ('RSV-' || r.id_reservasi) ILIKE ?) " +
-                "ORDER BY r.id_reservasi DESC";
+        String sql = "SELECT id_reservasi, nama_tamu, COALESCE(no_identitas, '-') AS no_identitas, " +
+                "COALESCE(no_kamar, '-') AS no_kamar, COALESCE(tipe_kamar, '-') AS tipe_kamar, " +
+                "tgl_checkin, tgl_checkout_rencana, COALESCE(total_denda, 0) AS denda, " +
+                "COALESCE(grand_total_pemasukan, 0) AS total_biaya, status_reservasi " +
+                "FROM v_laporan_pemasukan " +
+                "WHERE tgl_checkin BETWEEN ? AND ? " +
+                "AND (nama_tamu ILIKE ? OR COALESCE(no_identitas, '') ILIKE ? " +
+                "     OR COALESCE(no_kamar, '') ILIKE ? OR COALESCE(tipe_kamar, '') ILIKE ? " +
+                "     OR status_reservasi ILIKE ? OR ('RSV-' || id_reservasi) ILIKE ?) " +
+                "ORDER BY id_reservasi DESC";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -203,7 +203,7 @@ public class ManajerDAO {
             while (rs.next()) {
                 list.add(new TransaksiReadOnlyItem(
                         rs.getInt("id_reservasi"),
-                        rs.getString("nama"),
+                        rs.getString("nama_tamu"),
                         rs.getString("no_identitas"),
                         rs.getString("no_kamar"),
                         rs.getString("tipe_kamar"),

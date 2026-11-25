@@ -34,13 +34,14 @@ public class ReservasiDAO {
     public List<RiwayatItem> getRiwayatByUsername(String username) {
         List<RiwayatItem> list = new ArrayList<>();
 
-        String sqlReservasi = "SELECT r.id_reservasi, COALESCE(r.no_kamar, '-') AS no_kamar, " +
-                "COALESCE(r.tipe_kamar, '-') AS tipe_kamar, r.tgl_checkin, r.tgl_checkout_rencana, " +
-                "r.total_biaya, r.status_reservasi " +
-                "FROM reservasi r " +
+        String sqlReservasi = "SELECT v.id_reservasi, COALESCE(v.no_kamar, '-') AS no_kamar, " +
+                "COALESCE(v.tipe_kamar, '-') AS tipe_kamar, v.tgl_checkin, v.tgl_checkout_rencana, " +
+                "v.total_biaya_kamar, v.status_reservasi " +
+                "FROM v_laporan_pemasukan v " +
+                "JOIN reservasi r ON v.id_reservasi = r.id_reservasi " +
                 "JOIN users u ON r.id_user = u.id_user " +
                 "WHERE LOWER(u.username) = LOWER(?) " +
-                "ORDER BY r.id_reservasi DESC";
+                "ORDER BY v.id_reservasi DESC";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sqlReservasi)) {
@@ -62,7 +63,7 @@ public class ReservasiDAO {
                         rs.getInt("id_reservasi"),
                         "Reservasi Kamar",
                         detailKamar,
-                        rs.getDouble("total_biaya"),
+                        rs.getDouble("total_biaya_kamar"),
                         rs.getString("status_reservasi")
                 ));
             }

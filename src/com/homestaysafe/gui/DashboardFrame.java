@@ -14,7 +14,7 @@ public class DashboardFrame extends JFrame {
 
     public DashboardFrame() {
         setTitle("HomestaySafe - Dashboard Utama");
-        setSize(660, 460);
+        setSize(680, 520);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(true);
@@ -23,24 +23,34 @@ public class DashboardFrame extends JFrame {
         outerPanel.setBackground(COLOR_BG);
         outerPanel.setBorder(new EmptyBorder(30, 30, 30, 30));
 
-        JPanel cardPanel = UIHelper.createRoundedCard(22, 42, 45);
-        cardPanel.setLayout(new BorderLayout(0, 24));
+        JPanel cardPanel = UIHelper.createRoundedCard(22, 36, 45);
+        cardPanel.setLayout(new BorderLayout(0, 20));
 
-        JPanel headerPanel = new JPanel(new GridLayout(3, 1, 0, 8));
+        JPanel headerPanel = new JPanel();
+        headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
         headerPanel.setOpaque(false);
+
+        JLabel lblLogo = new JLabel(UIHelper.getLogoIcon(76, 82));
+        lblLogo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        lblLogo.setBorder(new EmptyBorder(0, 0, 12, 0));
 
         JLabel lblTag = new JLabel("HOMESTAYSAFE RESORT & RESERVASI", SwingConstants.CENTER);
         lblTag.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lblTag.setForeground(COLOR_GOLD);
+        lblTag.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel lblTitle = new JLabel("Selamat Datang", SwingConstants.CENTER);
         lblTitle.setFont(new Font("Serif", Font.BOLD, 32));
         lblTitle.setForeground(COLOR_NAVY);
+        lblTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+        lblTitle.setBorder(new EmptyBorder(4, 0, 6, 0));
 
         JLabel lblSub = new JLabel("Sistem Pemesanan & Pengelolaan Homestay Aman dan Nyaman", SwingConstants.CENTER);
         lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lblSub.setForeground(COLOR_TEXT_MUTED);
+        lblSub.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+        headerPanel.add(lblLogo);
         headerPanel.add(lblTag);
         headerPanel.add(lblTitle);
         headerPanel.add(lblSub);

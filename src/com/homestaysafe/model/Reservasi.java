@@ -4,15 +4,8 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 
-/**
- * Model reservasi. Mengimplementasikan dua interface sekaligus:
- *  - Dendable  → aturan perhitungan denda keterlambatan check-out
- *  - Cetakable → pembuatan nota pembayaran
- *
- * Catatan: {@code totalBiaya} adalah biaya sewa kamar saja. Tagihan F&B disimpan
- * di {@code totalMakanan}, dan denda di {@code denda} (telat) + {@code dendaKerusakan}.
- */
 public class Reservasi implements Cetakable, Dendable {
 
     public static final double TARIF_DENDA_PER_JAM = 50000.0;
@@ -20,13 +13,17 @@ public class Reservasi implements Cetakable, Dendable {
 
     private int idReservasi;
     private int idUser;
+    private int idTipeKamar;
+    private Integer idKamar;
     private String noKamar;
     private String tipeKamar;
     private String namaTamu;
+    private String sumberBooking;
     private LocalDate tglCheckin;
     private LocalDate tglCheckoutRencana;
     private LocalDateTime tglCheckoutAktual;
-    private double totalBiaya;        // biaya sewa kamar
+    private double hargaKamarDeal;
+    private double totalBiaya;        // total biaya sewa kamar (durasi * hargaKamarDeal)
     private double denda;             // denda keterlambatan
     private double dendaKerusakan;    // denda kerusakan fasilitas
     private double totalMakanan;      // tagihan F&B
@@ -39,18 +36,26 @@ public class Reservasi implements Cetakable, Dendable {
     public void setIdReservasi(int idReservasi) { this.idReservasi = idReservasi; }
     public int getIdUser() { return idUser; }
     public void setIdUser(int idUser) { this.idUser = idUser; }
+    public int getIdTipeKamar() { return idTipeKamar; }
+    public void setIdTipeKamar(int idTipeKamar) { this.idTipeKamar = idTipeKamar; }
+    public Integer getIdKamar() { return idKamar; }
+    public void setIdKamar(Integer idKamar) { this.idKamar = idKamar; }
     public String getNoKamar() { return noKamar; }
     public void setNoKamar(String noKamar) { this.noKamar = noKamar; }
     public String getTipeKamar() { return tipeKamar; }
     public void setTipeKamar(String tipeKamar) { this.tipeKamar = tipeKamar; }
     public String getNamaTamu() { return namaTamu; }
     public void setNamaTamu(String namaTamu) { this.namaTamu = namaTamu; }
+    public String getSumberBooking() { return sumberBooking; }
+    public void setSumberBooking(String sumberBooking) { this.sumberBooking = sumberBooking; }
     public LocalDate getTglCheckin() { return tglCheckin; }
     public void setTglCheckin(LocalDate tglCheckin) { this.tglCheckin = tglCheckin; }
     public LocalDate getTglCheckoutRencana() { return tglCheckoutRencana; }
     public void setTglCheckoutRencana(LocalDate tglCheckoutRencana) { this.tglCheckoutRencana = tglCheckoutRencana; }
     public LocalDateTime getTglCheckoutAktual() { return tglCheckoutAktual; }
     public void setTglCheckoutAktual(LocalDateTime tglCheckoutAktual) { this.tglCheckoutAktual = tglCheckoutAktual; }
+    public double getHargaKamarDeal() { return hargaKamarDeal; }
+    public void setHargaKamarDeal(double hargaKamarDeal) { this.hargaKamarDeal = hargaKamarDeal; }
     public double getTotalBiaya() { return totalBiaya; }
     public void setTotalBiaya(double totalBiaya) { this.totalBiaya = totalBiaya; }
     public double getDenda() { return denda; }
@@ -62,14 +67,15 @@ public class Reservasi implements Cetakable, Dendable {
     public String getStatusReservasi() { return statusReservasi; }
     public void setStatusReservasi(String statusReservasi) { this.statusReservasi = statusReservasi; }
 
-    // ===== Logika bisnis =====
+    public long getDurasiMalam() {
+        if (tglCheckin == null || tglCheckoutRencana == null) return 1;
+        return Math.max(1, ChronoUnit.DAYS.between(tglCheckin, tglCheckoutRencana));
+    }
 
-    /** Batas waktu check-out: tanggal rencana pukul 12:00. */
     public LocalDateTime getBatasCheckout() {
         return tglCheckoutRencana == null ? null : tglCheckoutRencana.atTime(JAM_BATAS_CHECKOUT);
     }
 
-    /** Jumlah jam keterlambatan (dibulatkan ke atas, minimal 1 jam jika lewat batas). */
     public long hitungJamTelat(LocalDateTime waktuCheckoutAktual) {
         LocalDateTime batas = getBatasCheckout();
         if (batas == null || waktuCheckoutAktual == null || !waktuCheckoutAktual.isAfter(batas)) return 0;
@@ -77,7 +83,6 @@ public class Reservasi implements Cetakable, Dendable {
         return Math.max(1, (long) Math.ceil(menitTelat / 60.0));
     }
 
-    /** Polymorphism via Dendable: denda keterlambatan = jam telat × tarif per jam. */
     @Override
     public double hitungDenda(LocalDateTime waktuCheckoutAktual) {
         return hitungJamTelat(waktuCheckoutAktual) * TARIF_DENDA_PER_JAM;
@@ -91,7 +96,6 @@ public class Reservasi implements Cetakable, Dendable {
         return totalBiaya + totalMakanan + getTotalDenda();
     }
 
-    /** Polymorphism via Cetakable. */
     @Override
     public String cetakNota() {
         return ""

@@ -242,6 +242,7 @@ public class CheckOutPanel extends JPanel {
         double grandTotal = reservasi.hitungGrandTotal();
 
         if (dao.prosesCheckOut(idRes, grandTotal)) {
+            dao.simpanDenda(idRes, dendaTelat, dendaKerusakan);
             reservasi.setStatusReservasi("Selesai");
             reservasi.setTglCheckoutAktual(waktuSekarang);
             showNotaDialog(reservasi, idRes, nama, noKamar, kamar, fb, jamTelat, dendaTelat, dendaKerusakan, grandTotal, items);

@@ -25,6 +25,11 @@ public class KelolaMenuPanel extends JPanel {
     private final DefaultTableModel model;
     private final JTable table;
 
+    private final JComboBox<String> cbKategori = new JComboBox<>(new String[]{
+            "Coffee", "Cocktail", "Non-Coffee", "Jus",
+            "Makanan Pembuka", "Makanan Utama", "Pencuci Mulut", "Cemilan",
+            "Minuman Khas Hotel", "Makanan Khas Hotel"
+    });
     private final JTextField txtNama  = new JTextField();
     private final JTextField txtHarga = new JTextField();
     private final JLabel lblMode = new JLabel("Tambah menu baru");
@@ -67,26 +72,31 @@ public class KelolaMenuPanel extends JPanel {
         fieldRow.setOpaque(false);
         fieldRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JPanel inputsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
+        JPanel inputsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         inputsPanel.setOpaque(false);
 
+        JLabel lblKat = makeLabel("Kategori");
+        cbKategori.setPreferredSize(new Dimension(170, 36));
+        UIHelper.styleField(cbKategori);
+
         JLabel lblNama = makeLabel("Nama Menu");
-        txtNama.setPreferredSize(new Dimension(260, 36));
+        txtNama.setPreferredSize(new Dimension(225, 36));
         UIHelper.styleField(txtNama);
 
         JLabel lblHarga = makeLabel("Harga (Rp)");
-        txtHarga.setPreferredSize(new Dimension(150, 36));
+        txtHarga.setPreferredSize(new Dimension(130, 36));
         UIHelper.styleField(txtHarga);
 
+        inputsPanel.add(lblKat);
+        inputsPanel.add(cbKategori);
         inputsPanel.add(lblNama);
         inputsPanel.add(txtNama);
-        inputsPanel.add(Box.createHorizontalStrut(8));
         inputsPanel.add(lblHarga);
         inputsPanel.add(txtHarga);
 
         btnSimpan.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btnSimpan.setBorder(new EmptyBorder(8, 22, 8, 22));
-        btnSimpan.setPreferredSize(new Dimension(120, 36));
+        btnSimpan.setPreferredSize(new Dimension(115, 36));
 
         fieldRow.add(inputsPanel, BorderLayout.CENTER);
         fieldRow.add(btnSimpan, BorderLayout.EAST);
@@ -94,16 +104,16 @@ public class KelolaMenuPanel extends JPanel {
         formCard.add(lblMode);
         formCard.add(fieldRow);
 
-        String[] cols = {"ID", "Nama Menu", "Harga", "Aksi"};
+        String[] cols = {"ID", "Foto", "Kategori", "Nama Menu", "Harga", "Aksi"};
         model = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
-                return c == 3;
+                return c == 5;
             }
         };
 
         table = new JTable(model);
-        table.setRowHeight(44);
+        table.setRowHeight(52);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         table.setShowVerticalLines(false);
         table.setGridColor(new Color(241, 245, 249));
@@ -125,29 +135,45 @@ public class KelolaMenuPanel extends JPanel {
             }
         });
 
+        DefaultTableCellRenderer fotoRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object val, boolean sel, boolean foc, int r, int c) {
+                JLabel lbl = new JLabel();
+                lbl.setHorizontalAlignment(SwingConstants.CENTER);
+                lbl.setOpaque(true);
+                lbl.setBackground(sel ? t.getSelectionBackground() : (r % 2 == 0 ? Color.WHITE : new Color(248, 250, 252)));
+                if (val instanceof Icon) lbl.setIcon((Icon) val);
+                return lbl;
+            }
+        };
+
         DefaultTableCellRenderer baseRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object val, boolean sel, boolean foc, int r, int c) {
                 JLabel lbl = (JLabel) super.getTableCellRendererComponent(t, val, sel, foc, r, c);
                 if (!sel) lbl.setBackground(r % 2 == 0 ? Color.WHITE : new Color(248, 250, 252));
                 lbl.setBorder(new EmptyBorder(0, 12, 0, 12));
-                lbl.setHorizontalAlignment(c == 2 ? SwingConstants.RIGHT : SwingConstants.CENTER);
-                lbl.setForeground(c == 2 ? COLOR_GREEN : COLOR_NAVY);
-                lbl.setFont(new Font("Segoe UI", c == 2 ? Font.BOLD : Font.PLAIN, 13));
+                lbl.setHorizontalAlignment(c == 4 ? SwingConstants.RIGHT : (c == 3 ? SwingConstants.LEFT : SwingConstants.CENTER));
+                lbl.setForeground(c == 4 ? COLOR_GREEN : COLOR_NAVY);
+                lbl.setFont(new Font("Segoe UI", c == 4 ? Font.BOLD : Font.PLAIN, 13));
                 return lbl;
             }
         };
-        for (int i = 0; i < 3; i++) {
-            table.getColumnModel().getColumn(i).setCellRenderer(baseRenderer);
-        }
+        table.getColumnModel().getColumn(0).setCellRenderer(baseRenderer);
+        table.getColumnModel().getColumn(1).setCellRenderer(fotoRenderer);
+        table.getColumnModel().getColumn(2).setCellRenderer(baseRenderer);
+        table.getColumnModel().getColumn(3).setCellRenderer(baseRenderer);
+        table.getColumnModel().getColumn(4).setCellRenderer(baseRenderer);
 
-        table.getColumnModel().getColumn(3).setCellRenderer(new ButtonRenderer());
-        table.getColumnModel().getColumn(3).setCellEditor(new ButtonEditor(new JCheckBox()));
+        table.getColumnModel().getColumn(5).setCellRenderer(new ButtonRenderer());
+        table.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new JCheckBox()));
 
-        table.getColumnModel().getColumn(0).setPreferredWidth(55);
-        table.getColumnModel().getColumn(1).setPreferredWidth(280);
-        table.getColumnModel().getColumn(2).setPreferredWidth(130);
-        table.getColumnModel().getColumn(3).setPreferredWidth(180);
+        table.getColumnModel().getColumn(0).setPreferredWidth(50);
+        table.getColumnModel().getColumn(1).setPreferredWidth(68);
+        table.getColumnModel().getColumn(2).setPreferredWidth(150);
+        table.getColumnModel().getColumn(3).setPreferredWidth(240);
+        table.getColumnModel().getColumn(4).setPreferredWidth(120);
+        table.getColumnModel().getColumn(5).setPreferredWidth(175);
 
         JScrollPane scroll = new JScrollPane(table);
         scroll.setBorder(new LineBorder(COLOR_BORDER, 1, true));
@@ -182,6 +208,8 @@ public class KelolaMenuPanel extends JPanel {
         for (MenuDAO.Menu m : list) {
             model.addRow(new Object[]{
                     m.getIdMenu(),
+                    UIHelper.getMenuImageIcon(m.getNamaMenu(), 44, 38, 8),
+                    m.getKategori(),
                     m.getNamaMenu(),
                     String.format("Rp %,d", (long) m.getHarga()),
                     "Edit | Hapus"
@@ -190,6 +218,7 @@ public class KelolaMenuPanel extends JPanel {
     }
 
     private void simpanData() {
+        String kategori = cbKategori.getSelectedItem() != null ? cbKategori.getSelectedItem().toString() : "Makanan Utama";
         String nama = txtNama.getText().trim();
         String hargaStr = txtHarga.getText().trim().replace(".", "").replace(",", "");
 
@@ -210,10 +239,10 @@ public class KelolaMenuPanel extends JPanel {
 
         boolean ok;
         if (selectedId == null) {
-            ok = dao.tambahMenu(nama, harga);
+            ok = dao.tambahMenu(kategori, nama, harga);
             if (ok) JOptionPane.showMessageDialog(this, "Menu berhasil ditambahkan.", "Sukses", JOptionPane.INFORMATION_MESSAGE);
         } else {
-            ok = dao.updateMenu(selectedId, nama, harga);
+            ok = dao.updateMenu(selectedId, kategori, nama, harga);
             if (ok) JOptionPane.showMessageDialog(this, "Menu berhasil diubah.", "Sukses", JOptionPane.INFORMATION_MESSAGE);
         }
 
@@ -227,7 +256,8 @@ public class KelolaMenuPanel extends JPanel {
 
     private void editRow(int row) {
         selectedId = (Integer) model.getValueAt(row, 0);
-        txtNama.setText((String) model.getValueAt(row, 1));
+        cbKategori.setSelectedItem(model.getValueAt(row, 2));
+        txtNama.setText((String) model.getValueAt(row, 3));
 
         List<MenuDAO.Menu> list = dao.getAllMenu();
         for (MenuDAO.Menu m : list) {
@@ -244,7 +274,7 @@ public class KelolaMenuPanel extends JPanel {
 
     private void hapusRow(int row) {
         int id = (Integer) model.getValueAt(row, 0);
-        String nama = (String) model.getValueAt(row, 1);
+        String nama = (String) model.getValueAt(row, 3);
 
         int terkait = dao.hitungPesananTerkait(id);
         String pesan = terkait > 0
@@ -271,6 +301,7 @@ public class KelolaMenuPanel extends JPanel {
 
     private void resetForm() {
         selectedId = null;
+        cbKategori.setSelectedIndex(0);
         txtNama.setText("");
         txtHarga.setText("");
         lblMode.setText("Tambah menu baru");
@@ -293,7 +324,7 @@ public class KelolaMenuPanel extends JPanel {
                 "Hapus", COLOR_RED, UIHelper.COLOR_DANGER_HOVER, COLOR_RED.darker(), Color.WHITE, 8, 11);
 
         public ButtonRenderer() {
-            setLayout(new FlowLayout(FlowLayout.CENTER, 6, 7));
+            setLayout(new FlowLayout(FlowLayout.CENTER, 6, 11));
             setOpaque(true);
             styleBtn(btnEdit);
             styleBtn(btnHapus);
@@ -314,7 +345,7 @@ public class KelolaMenuPanel extends JPanel {
     }
 
     class ButtonEditor extends DefaultCellEditor {
-        private final JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 7));
+        private final JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 11));
         private final JButton btnEdit = UIHelper.createRoundedButton(
                 "Edit", new Color(37, 99, 235), new Color(29, 78, 216), new Color(30, 64, 175), Color.WHITE, 8, 11);
         private final JButton btnHapus = UIHelper.createRoundedButton(
