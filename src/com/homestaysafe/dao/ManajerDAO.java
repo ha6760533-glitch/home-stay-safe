@@ -83,30 +83,49 @@ public class ManajerDAO {
         public String getStatusReservasi() { return statusReservasi; }
     }
 
-    public List<PendapatanItem> getLaporanPendapatan(String modePeriode) {
+    /** Data Combo Chart 1: Pendapatan Kamar (Batang) & Jumlah Transaksi Reservasi (Garis) */
+    public List<PendapatanItem> getLaporanPendapatanKamar(String modePeriode) {
+        return getLaporanPendapatanKamar(modePeriode, null);
+    }
+
+    public List<PendapatanItem> getLaporanPendapatanKamar(String modePeriode, String bulanSpesifik) {
         List<PendapatanItem> list = new ArrayList<>();
         String formatSql = "Tahunan".equalsIgnoreCase(modePeriode)
                 ? "TO_CHAR(tgl_checkin, 'YYYY')"
                 : "TO_CHAR(tgl_checkin, 'YYYY-MM')";
 
-        String sql = "SELECT " + formatSql + " AS periode, " +
-                "COUNT(*) AS jml_transaksi, " +
-                "COALESCE(SUM(grand_total_pemasukan), 0) AS total_omzet " +
-                "FROM v_laporan_pemasukan " +
-                "WHERE status_reservasi IN ('Disetujui', 'Check-in', 'Selesai') " +
-                "GROUP BY periode " +
-                "ORDER BY periode ASC";
+        StringBuilder sql = new StringBuilder(
+                "SELECT " + formatSql + " AS periode, " +
+                        "COUNT(id_reservasi) AS jml_transaksi, " +
+                        "COALESCE(SUM(COALESCE(total_biaya_kamar, 0) + COALESCE(total_denda, 0)), 0) AS total_kamar " +
+                        "FROM v_laporan_pemasukan " +
+                        "WHERE status_reservasi IN ('Disetujui', 'Check-in', 'Selesai') "
+        );
+
+        boolean filterBulan = "Bulanan".equalsIgnoreCase(modePeriode)
+                && bulanSpesifik != null && !bulanSpesifik.isBlank() && !"Semua".equalsIgnoreCase(bulanSpesifik);
+
+        if (filterBulan) {
+            sql.append("AND TO_CHAR(tgl_checkin, 'YYYY-MM') = ? ");
+        }
+
+        sql.append("GROUP BY periode ORDER BY periode ASC");
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
 
-            while (rs.next()) {
-                list.add(new PendapatanItem(
-                        rs.getString("periode"),
-                        rs.getInt("jml_transaksi"),
-                        rs.getDouble("total_omzet")
-                ));
+            if (filterBulan) {
+                stmt.setString(1, bulanSpesifik.trim());
+            }
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new PendapatanItem(
+                            rs.getString("periode"),
+                            rs.getInt("jml_transaksi"),
+                            rs.getDouble("total_kamar")
+                    ));
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -114,31 +133,35 @@ public class ManajerDAO {
         return list;
     }
 
-    /** Data Combo Chart 1: Pendapatan Kamar (Batang) & Jumlah Transaksi Reservasi (Garis) */
-    public List<PendapatanItem> getLaporanPendapatanKamar(String modePeriode) {
+    /** Data Mingguan dalam 1 Bulan (YYYY-MM): label periode "M1" s.d. "M5" */
+    public List<PendapatanItem> getLaporanPendapatanKamarMingguan(String bulanYearMonth) {
         List<PendapatanItem> list = new ArrayList<>();
-        String formatSql = "Tahunan".equalsIgnoreCase(modePeriode)
-                ? "TO_CHAR(tgl_checkin, 'YYYY')"
-                : "TO_CHAR(tgl_checkin, 'YYYY-MM')";
+        if (bulanYearMonth == null || bulanYearMonth.isBlank()) {
+            return list;
+        }
 
-        String sql = "SELECT " + formatSql + " AS periode, " +
+        String sql = "SELECT ('M' || LEAST(5, ((EXTRACT(DAY FROM tgl_checkin)::int - 1) / 7) + 1)) AS periode, " +
                 "COUNT(id_reservasi) AS jml_transaksi, " +
                 "COALESCE(SUM(COALESCE(total_biaya_kamar, 0) + COALESCE(total_denda, 0)), 0) AS total_kamar " +
                 "FROM v_laporan_pemasukan " +
                 "WHERE status_reservasi IN ('Disetujui', 'Check-in', 'Selesai') " +
+                "AND TO_CHAR(tgl_checkin, 'YYYY-MM') = ? " +
                 "GROUP BY periode " +
                 "ORDER BY periode ASC";
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            while (rs.next()) {
-                list.add(new PendapatanItem(
-                        rs.getString("periode"),
-                        rs.getInt("jml_transaksi"),
-                        rs.getDouble("total_kamar")
-                ));
+            stmt.setString(1, bulanYearMonth.trim());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new PendapatanItem(
+                            rs.getString("periode"),
+                            rs.getInt("jml_transaksi"),
+                            rs.getDouble("total_kamar")
+                    ));
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -148,31 +171,87 @@ public class ManajerDAO {
 
     /** Data Combo Chart 2: Pendapatan Menu F&B (Batang) & Total Porsi Terjual (Garis) */
     public List<PendapatanItem> getLaporanPendapatanMenu(String modePeriode) {
+        return getLaporanPendapatanMenu(modePeriode, null);
+    }
+
+    public List<PendapatanItem> getLaporanPendapatanMenu(String modePeriode, String bulanSpesifik) {
         List<PendapatanItem> list = new ArrayList<>();
         String formatSql = "Tahunan".equalsIgnoreCase(modePeriode)
                 ? "TO_CHAR(r.tgl_checkin, 'YYYY')"
                 : "TO_CHAR(r.tgl_checkin, 'YYYY-MM')";
 
-        String sql = "SELECT " + formatSql + " AS periode, " +
+        StringBuilder sql = new StringBuilder(
+                "SELECT " + formatSql + " AS periode, " +
+                        "COALESCE(SUM(pm.jumlah), 0) AS total_porsi, " +
+                        "COALESCE(SUM(pm.subtotal), 0) AS total_menu " +
+                        "FROM pesanan_makanan pm " +
+                        "JOIN reservasi r ON pm.id_reservasi = r.id_reservasi " +
+                        "WHERE pm.status_pesanan <> 'Dibatalkan' " +
+                        "AND r.status_reservasi IN ('Disetujui', 'Check-in', 'Selesai') "
+        );
+
+        boolean filterBulan = "Bulanan".equalsIgnoreCase(modePeriode)
+                && bulanSpesifik != null && !bulanSpesifik.isBlank() && !"Semua".equalsIgnoreCase(bulanSpesifik);
+
+        if (filterBulan) {
+            sql.append("AND TO_CHAR(r.tgl_checkin, 'YYYY-MM') = ? ");
+        }
+
+        sql.append("GROUP BY periode ORDER BY periode ASC");
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+
+            if (filterBulan) {
+                stmt.setString(1, bulanSpesifik.trim());
+            }
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new PendapatanItem(
+                            rs.getString("periode"),
+                            rs.getInt("total_porsi"),
+                            rs.getDouble("total_menu")
+                    ));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /** Data Mingguan Menu F&B dalam 1 Bulan (YYYY-MM): label periode "M1" s.d. "M5" */
+    public List<PendapatanItem> getLaporanPendapatanMenuMingguan(String bulanYearMonth) {
+        List<PendapatanItem> list = new ArrayList<>();
+        if (bulanYearMonth == null || bulanYearMonth.isBlank()) {
+            return list;
+        }
+
+        String sql = "SELECT ('M' || LEAST(5, ((EXTRACT(DAY FROM r.tgl_checkin)::int - 1) / 7) + 1)) AS periode, " +
                 "COALESCE(SUM(pm.jumlah), 0) AS total_porsi, " +
                 "COALESCE(SUM(pm.subtotal), 0) AS total_menu " +
                 "FROM pesanan_makanan pm " +
                 "JOIN reservasi r ON pm.id_reservasi = r.id_reservasi " +
                 "WHERE pm.status_pesanan <> 'Dibatalkan' " +
                 "AND r.status_reservasi IN ('Disetujui', 'Check-in', 'Selesai') " +
+                "AND TO_CHAR(r.tgl_checkin, 'YYYY-MM') = ? " +
                 "GROUP BY periode " +
                 "ORDER BY periode ASC";
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            while (rs.next()) {
-                list.add(new PendapatanItem(
-                        rs.getString("periode"),
-                        rs.getInt("total_porsi"),
-                        rs.getDouble("total_menu")
-                ));
+            stmt.setString(1, bulanYearMonth.trim());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new PendapatanItem(
+                            rs.getString("periode"),
+                            rs.getInt("total_porsi"),
+                            rs.getDouble("total_menu")
+                    ));
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();

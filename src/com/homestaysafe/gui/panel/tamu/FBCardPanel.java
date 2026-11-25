@@ -6,6 +6,7 @@ import com.homestaysafe.dao.MenuDAO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.geom.RoundRectangle2D;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -110,7 +111,7 @@ public class FBCardPanel extends JPanel {
         // Panel Keranjang Pesanan di Kanan
         JPanel cartPanel = UIHelper.createRoundedCard(16, 16, 16);
         cartPanel.setLayout(new BorderLayout(10, 10));
-        cartPanel.setPreferredSize(new Dimension(330, 0));
+        cartPanel.setPreferredSize(new Dimension(350, 0));
 
         JLabel lblCartHeader = new JLabel("Keranjang Pesanan");
         lblCartHeader.setFont(new Font("Segoe UI", Font.BOLD, 16));
@@ -166,11 +167,9 @@ public class FBCardPanel extends JPanel {
             JPanel card = UIHelper.createRoundedCard(14, 10, 12);
             card.setLayout(new BorderLayout(10, 0));
 
-            // Foto Makanan/Minuman yang proporsional agar muat 2 kolom tanpa scroll samping
             JLabel lblFoto = new JLabel(UIHelper.getMenuImageIcon(m.getNamaMenu(), 76, 72, 10));
             lblFoto.setPreferredSize(new Dimension(76, 72));
 
-            // Info Menu di Tengah Card (tanpa fixed HTML width agar fleksibel)
             JPanel infoPanel = new JPanel();
             infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
             infoPanel.setOpaque(false);
@@ -195,7 +194,6 @@ public class FBCardPanel extends JPanel {
             infoPanel.add(lblNama);
             infoPanel.add(lblHarga);
 
-            // Tombol Tambah di Kanan Card
             JPanel actionWrap = new JPanel(new GridBagLayout());
             actionWrap.setOpaque(false);
 
@@ -223,6 +221,53 @@ public class FBCardPanel extends JPanel {
         gridMenuPanel.repaint();
     }
 
+    private JButton createQtyButton(String symbol, Color normalBg, Color hoverBg, Color pressedBg, Color fgColor, String tooltip, Runnable onClick) {
+        JButton btn = new JButton() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                int w = getWidth();
+                int h = getHeight();
+                Color bg = getModel().isPressed()
+                        ? pressedBg
+                        : (getModel().isRollover() ? hoverBg : normalBg);
+
+                g2.setColor(bg);
+                g2.fill(new RoundRectangle2D.Float(0, 0, w, h, 6, 6));
+
+                g2.setColor(fgColor);
+                g2.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+                if ("-".equals(symbol)) {
+                    g2.drawLine(6, h / 2, w - 6, h / 2);
+                } else if ("+".equals(symbol)) {
+                    g2.drawLine(6, h / 2, w - 6, h / 2);
+                    g2.drawLine(w / 2, 6, w / 2, h - 6);
+                } else {
+                    int pad = 6;
+                    g2.drawLine(pad, pad, w - pad, h - pad);
+                    g2.drawLine(w - pad, pad, pad, h - pad);
+                }
+
+                g2.dispose();
+            }
+        };
+        Dimension size = new Dimension(22, 22);
+        btn.setPreferredSize(size);
+        btn.setMinimumSize(size);
+        btn.setMaximumSize(size);
+        btn.setFocusPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setOpaque(false);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.setToolTipText(tooltip);
+        btn.addActionListener(e -> onClick.run());
+        return btn;
+    }
+
     private void updateCartUI() {
         if (cartListPanel == null) return;
         cartListPanel.removeAll();
@@ -239,50 +284,93 @@ public class FBCardPanel extends JPanel {
 
             JPanel row = UIHelper.createRoundedCard(12, 10, 10);
             row.setBackground(new Color(248, 250, 252));
-            row.setLayout(new BorderLayout(8, 0));
+            row.setLayout(new BorderLayout(6, 6));
             row.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-            // Lebar HTML dibatasi 145px agar nama panjang turun baris rapi dan tidak terpotong
+            // Bagian atas baris: Nama menu + harga subtotal + tombol hapus item (×)
             JLabel lblName = new JLabel(
-                    "<html><body style='width:145px; margin:0; padding:0;'>"
-                            + "<b>" + m.getNamaMenu() + "</b><br>"
-                            + "<span style='color:#64748b; font-size:10px;'>Qty: x" + qty + "</span>"
+                    "<html><body style='width:115px; margin:0; padding:0;'>"
+                            + "<b>" + m.getNamaMenu() + "</b>"
                             + "</body></html>"
             );
-            lblName.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            lblName.setVerticalAlignment(SwingConstants.CENTER);
+            lblName.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+            lblName.setForeground(COLOR_NAVY);
 
             JLabel lblPrice = new JLabel(String.format("Rp %,.0f", totalItemHarga));
-            lblPrice.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            lblPrice.setFont(new Font("Segoe UI", Font.BOLD, 11));
             lblPrice.setForeground(COLOR_NAVY);
-            lblPrice.setHorizontalAlignment(SwingConstants.RIGHT);
 
-            JButton btnDelete = UIHelper.createRoundedButton("×",
-                    UIHelper.COLOR_DANGER, UIHelper.COLOR_DANGER_HOVER, UIHelper.COLOR_DANGER.darker(), Color.WHITE, 8, 15);
-            btnDelete.setBorder(new EmptyBorder(0, 0, 2, 0));
-            btnDelete.setMargin(new Insets(0, 0, 0, 0));
-            btnDelete.setPreferredSize(new Dimension(26, 26));
-            btnDelete.setToolTipText("Hapus item");
-            btnDelete.addActionListener(e -> {
-                cartItems.remove(m);
-                updateCartUI();
-            });
+            JButton btnDelete = createQtyButton(
+                    "×",
+                    UIHelper.COLOR_DANGER,
+                    UIHelper.COLOR_DANGER_HOVER,
+                    UIHelper.COLOR_DANGER.darker(),
+                    Color.WHITE,
+                    "Hapus item dari keranjang",
+                    () -> {
+                        cartItems.remove(m);
+                        updateCartUI();
+                    }
+            );
 
-            JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
-            rightPanel.setOpaque(false);
-            rightPanel.add(lblPrice);
-            rightPanel.add(btnDelete);
+            JPanel topRight = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+            topRight.setOpaque(false);
+            topRight.add(lblPrice);
+            topRight.add(btnDelete);
 
-            JPanel rightWrap = new JPanel(new GridBagLayout());
-            rightWrap.setOpaque(false);
-            rightWrap.add(rightPanel);
+            JPanel topRow = new JPanel(new BorderLayout(4, 0));
+            topRow.setOpaque(false);
+            topRow.add(lblName, BorderLayout.WEST);
+            topRow.add(topRight, BorderLayout.EAST);
 
-            row.add(lblName, BorderLayout.CENTER);
-            row.add(rightWrap, BorderLayout.EAST);
+            // Bagian bawah baris: Kontrol jumlah (- / qty / +)
+            JButton btnMinus = createQtyButton(
+                    "-",
+                    new Color(226, 232, 240),
+                    new Color(203, 213, 225),
+                    new Color(148, 163, 184),
+                    COLOR_NAVY,
+                    "Kurangi 1 porsi",
+                    () -> {
+                        int current = cartItems.getOrDefault(m, 0);
+                        if (current > 1) {
+                            cartItems.put(m, current - 1);
+                        } else {
+                            cartItems.remove(m);
+                        }
+                        updateCartUI();
+                    }
+            );
 
-            // Tinggi baris otomatis mengikuti isi teks (tidak lagi terpotong di 52px)
+            JLabel lblQty = new JLabel(String.valueOf(qty), SwingConstants.CENTER);
+            lblQty.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            lblQty.setForeground(COLOR_NAVY);
+            lblQty.setPreferredSize(new Dimension(24, 22));
+
+            JButton btnPlus = createQtyButton(
+                    "+",
+                    COLOR_NAVY,
+                    new Color(30, 41, 59),
+                    COLOR_NAVY.darker(),
+                    Color.WHITE,
+                    "Tambah 1 porsi",
+                    () -> {
+                        cartItems.put(m, cartItems.getOrDefault(m, 0) + 1);
+                        updateCartUI();
+                    }
+            );
+
+            JPanel qtyControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+            qtyControls.setOpaque(false);
+            qtyControls.add(btnMinus);
+            qtyControls.add(lblQty);
+            qtyControls.add(btnPlus);
+
+            row.add(topRow, BorderLayout.NORTH);
+            row.add(qtyControls, BorderLayout.SOUTH);
+
             Dimension pref = row.getPreferredSize();
-            row.setMaximumSize(new Dimension(Integer.MAX_VALUE, Math.max(58, pref.height + 6)));
+            row.setMaximumSize(new Dimension(Integer.MAX_VALUE, Math.max(66, pref.height + 6)));
 
             cartListPanel.add(row);
             cartListPanel.add(Box.createRigidArea(new Dimension(0, 8)));
